@@ -1,79 +1,46 @@
-/*
-Demonstrates playback of a sine wave.
+#include <ncurses.h>
+#include <panel.h>
+#include <stdbool.h>
+#include <string.h>
 
-Since all this example is doing is playing back a sine wave, we can disable
-decoding (and encoding) which will slightly reduce the size of the executable.
-This is done with the `MA_NO_DECODING` and `MA_NO_ENCODING` options.
-
-The generation of sine wave is achieved via the `ma_waveform` API. A waveform is
-a data source which means it can be seamlessly plugged into the
-`ma_data_source_*()` family of APIs as well.
-
-A waveform is initialized using the standard config/init pattern used throughout
-all of miniaudio. Frames are read via the `ma_waveform_read_pcm_frames()` API.
-
-This example works with Emscripten.
-*/
-#define MA_NO_DECODING
-#define MA_NO_ENCODING
-#include "miniaudio/miniaudio.c"
-
-#include <stdio.h>
-
-
-#define DEVICE_FORMAT ma_format_f32
-#define DEVICE_CHANNELS 2
-#define DEVICE_SAMPLE_RATE 48000
-
-void data_callback(ma_device *pDevice, void *pOutput, const void *pInput,
-                   ma_uint32 frameCount) {
-  ma_waveform_read_pcm_frames((ma_waveform *)pDevice->pUserData, pOutput,
-                              frameCount, NULL);
-
-  (void)pInput; /* Unused. */
+void ui_setup() {
+  initscr();
+  noecho();
+  cbreak();
+  keypad(stdscr, TRUE);
+  curs_set(1);
 }
 
-int main(int argc, char **argv) {
-  ma_waveform sineWave;
-  ma_device_config deviceConfig;
-  ma_device device;
-  ma_waveform_config sineWaveConfig;
+void ui_draw() {
+  border(0, 0, 0, 0, 0, 0, 0, 0);
+  mvwprintw(stdscr, 0, 2, "Morse Trainer");
+}
 
-  deviceConfig = ma_device_config_init(ma_device_type_playback);
-  deviceConfig.playback.format = DEVICE_FORMAT;
-  deviceConfig.playback.channels = DEVICE_CHANNELS;
-  deviceConfig.sampleRate = DEVICE_SAMPLE_RATE;
-  deviceConfig.dataCallback = data_callback;
-  deviceConfig.pUserData = &sineWave;
+void ui_teardown() { endwin(); }
 
-  if (ma_device_init(NULL, &deviceConfig, &device) != MA_SUCCESS) {
-    printf("Failed to open playback device.\n");
-    return -4;
+int main() {
+  ui_setup();
+  ui_draw();
+
+  while (true) {
+    int ch = getch();
+    if (ch == KEY_RESIZE) {
+      clear();
+    }
+
+    ui_draw();
+
+    char msg[20] = "You said: ";
+    strncat(msg, (char *)&ch, 1);
+
+    int y, x;
+    getmaxyx(stdscr, y, x);
+    y = y * 0.5;
+    x = (x * 0.5) - strlen(msg);
+    mvwprintw(stdscr, y, x, "%s", msg);
+
+    refresh();
   }
 
-  printf("Device Name: %s\n", device.playback.name);
-
-  sineWaveConfig = ma_waveform_config_init(
-      device.playback.format, device.playback.channels, device.sampleRate,
-      ma_waveform_type_sine, 0.2, 220);
-  ma_waveform_init(&sineWaveConfig, &sineWave);
-
-  if (ma_device_start(&device) != MA_SUCCESS) {
-    printf("Failed to start playback device.\n");
-    ma_device_uninit(&device);
-    return -5;
-  }
-
-  printf("Press Enter to quit...\n");
-  getchar();
-
-  ma_device_uninit(&device);
-  ma_waveform_uninit(
-      &sineWave); /* Uninitialize the waveform after the device so we don't pull
-                     it from under the device while it's being reference in the
-                     data callback. */
-
-  (void)argc;
-  (void)argv;
   return 0;
 }
