@@ -1,6 +1,5 @@
 #include "morse_player.h"
 #include "miniaudio/miniaudio.c"
-#include "morse_lookup.h"
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,27 +8,17 @@
 #define DEVICE_CHANNELS 2
 #define DEVICE_SAMPLE_RATE 48000
 
-extern char* g_morse_lookup[];
 static ma_waveform *g_symbolDataSources;
-static size_t g_symbolDataSources_length;
+static size_t *g_symbolDataSources_length;
 ma_event g_stopEvent;
 
 // Allocates enough memory to represent any morse sequence in morse_table
 // (including gaps)
-bool player_setup() {
-  size_t max_morse_length = 0;
-  for (int i = 0; i < MORSE_TABLE_LENGTH; i++) {
-    char* symbol = g_morse_lookup[i];
-    if (symbol) {
-      size_t codeLength = strlen(symbol);
-      max_morse_length =
-          codeLength > max_morse_length ? codeLength : max_morse_length;
-    }
-  }
-
-  g_symbolDataSources_length = 2 * max_morse_length;
+bool player_setup(size_t max_code_length) {
+  g_symbolDataSources_length = malloc(sizeof(size_t));
+  *g_symbolDataSources_length = 2 * max_code_length;
   g_symbolDataSources =
-      malloc(g_symbolDataSources_length * sizeof(ma_waveform));
+      malloc(*g_symbolDataSources_length * sizeof(ma_waveform));
   return true;
 }
 
@@ -50,7 +39,6 @@ void data_callback(ma_device *pDevice, void *pOutput, const void *pInput,
 }
 
 void play_morse_char(struct player_config config, char *code) {
-  (void)code;
 
   ma_result result;
   int ditMS = 100; // TODO: real value
@@ -106,7 +94,7 @@ void play_morse_char(struct player_config config, char *code) {
     ma_event_wait(&g_stopEvent);
 
     ma_device_uninit(&device);
-    for (size_t i = 0; i < g_symbolDataSources_length; i++) {
+    for (size_t i = 0; i < *g_symbolDataSources_length; i++) {
       ma_waveform_uninit(&g_symbolDataSources[i]);
     }
   }
@@ -114,6 +102,7 @@ void play_morse_char(struct player_config config, char *code) {
 
 bool player_teardown() {
   free(g_symbolDataSources);
+  free(g_symbolDataSources_length);
 
   return true;
 }

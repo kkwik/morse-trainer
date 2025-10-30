@@ -1,11 +1,8 @@
-#include "morse_lookup.h"
-#include "morse_player.h"
+#include "morse_trainer.h"
 #include <ncurses.h>
 #include <panel.h>
 #include <stdbool.h>
 #include <string.h>
-
-extern char* g_morse_lookup[];
 
 void ui_setup() {
   initscr();
@@ -15,6 +12,7 @@ void ui_setup() {
   curs_set(1);
 }
 
+// TODO: rename to something more accurate
 void ui_draw() {
   border(0, 0, 0, 0, 0, 0, 0, 0);
   mvwprintw(stdscr, 0, 2, "Morse Trainer");
@@ -22,41 +20,27 @@ void ui_draw() {
 
 void ui_teardown() { endwin(); }
 
-char sanitize_key_input(char in) {
-#pragma GCC diagnostic warning "-Wtype-limits"
-  if (in < 0 || in >= MORSE_TABLE_LENGTH) {
-    return ' '; // This check might be useless, gcc seems to think so
-  }
-
-  if (in > 'a' && in < 'z') {
-    return in - 32; // Capitalize
-  }
-
-  // We'll assume this is safe (it probably isn't)
-  if (g_morse_lookup[(int)in]) {
-    return in;
-  }
-
-  return ' '; // Catch fallthrough
-}
-
 int main() {
-  player_setup();
-  struct player_config config = {.amp = 0.2, .hz = 800, .wpm = 25};
+  trainer_start();
   ui_setup();
   ui_draw();
 
   while (true) {
+    trainer_next();
+    trainer_play();
     int ch = getch();
     if (ch == KEY_RESIZE) {
       clear();
     }
-    char rec = sanitize_key_input(ch);
+    char guess = sanitize_key_input(ch);
+    if (guess == 0) {
+      continue;
+    }
 
     ui_draw();
 
-    char msg[20] = "You said: ";
-    strncat(msg, &rec, 1);
+    char msg[20] = "You guessed: ";
+    strncat(msg, &guess, 1);
 
     int y, x;
     getmaxyx(stdscr, y, x);
@@ -66,12 +50,10 @@ int main() {
 
     refresh();
 
-    if (rec == ' ') {
-      continue;
-    }
-    play_morse_char(config, g_morse_lookup[(int)rec]);
+    bool correct = trainer_guess(guess);
+		(void)correct;
   }
 
-  player_teardown();
+  trainer_stop();
   return 0;
 }
