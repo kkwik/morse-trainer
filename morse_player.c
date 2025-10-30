@@ -1,6 +1,6 @@
 #include "morse_player.h"
 #include "miniaudio/miniaudio.c"
-#include "morse.h"
+#include "morse_lookup.h"
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,7 +9,7 @@
 #define DEVICE_CHANNELS 2
 #define DEVICE_SAMPLE_RATE 48000
 
-extern struct morse_symbol g_morse_table[];
+extern char* g_morse_lookup[];
 static ma_waveform *g_symbolDataSources;
 static size_t g_symbolDataSources_length;
 ma_event g_stopEvent;
@@ -19,9 +19,9 @@ ma_event g_stopEvent;
 bool player_setup() {
   size_t max_morse_length = 0;
   for (int i = 0; i < MORSE_TABLE_LENGTH; i++) {
-    struct morse_symbol symbol = g_morse_table[i];
-    if (symbol.code) {
-      size_t codeLength = strlen(symbol.code);
+    char* symbol = g_morse_lookup[i];
+    if (symbol) {
+      size_t codeLength = strlen(symbol);
       max_morse_length =
           codeLength > max_morse_length ? codeLength : max_morse_length;
     }

@@ -1,11 +1,11 @@
-#include "morse.h"
+#include "morse_lookup.h"
 #include "morse_player.h"
 #include <ncurses.h>
 #include <panel.h>
 #include <stdbool.h>
 #include <string.h>
 
-extern struct morse_symbol g_morse_table[];
+extern char* g_morse_lookup[];
 
 void ui_setup() {
   initscr();
@@ -33,7 +33,7 @@ char sanitize_key_input(char in) {
   }
 
   // We'll assume this is safe (it probably isn't)
-  if (g_morse_table[(int)in].code) {
+  if (g_morse_lookup[(int)in]) {
     return in;
   }
 
@@ -69,7 +69,7 @@ int main() {
     if (rec == ' ') {
       continue;
     }
-    play_morse_char(config, g_morse_table[(int)rec].code);
+    play_morse_char(config, g_morse_lookup[(int)rec]);
   }
 
   player_teardown();
