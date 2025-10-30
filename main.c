@@ -1,7 +1,11 @@
+#include "morse.h"
+#include "morse_player.h"
 #include <ncurses.h>
 #include <panel.h>
 #include <stdbool.h>
 #include <string.h>
+
+extern struct morse_symbol g_morse_table[];
 
 void ui_setup() {
   initscr();
@@ -19,6 +23,8 @@ void ui_draw() {
 void ui_teardown() { endwin(); }
 
 int main() {
+  player_setup();
+  struct player_config config = {.amp = 0.2, .hz = 800, .wpm = 25};
   ui_setup();
   ui_draw();
 
@@ -40,7 +46,10 @@ int main() {
     mvwprintw(stdscr, y, x, "%s", msg);
 
     refresh();
+
+    play_morse_char(config, g_morse_table[ch].code);
   }
 
+  player_teardown();
   return 0;
 }
