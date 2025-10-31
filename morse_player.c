@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include <threads.h>
 
 #define DEVICE_FORMAT ma_format_f32
 #define DEVICE_CHANNELS 2
@@ -12,6 +13,7 @@ ma_device *device;
 static ma_waveform *g_symbolDataSources;
 static size_t *g_symbolDataSources_length;
 ma_event g_stopEvent;
+mtx_t serial_mtx;
 
 void data_callback(ma_device *pDevice, void *pOutput, const void *pInput,
                    ma_uint32 frameCount) {
@@ -30,6 +32,7 @@ void data_callback(ma_device *pDevice, void *pOutput, const void *pInput,
 }
 
 bool player_setup(size_t max_code_length) {
+  mtx_init(&serial_mtx, mtx_plain);
   ma_device_config deviceConfig;
   deviceConfig = ma_device_config_init(ma_device_type_playback);
   deviceConfig.playback.format = DEVICE_FORMAT;
@@ -106,9 +109,11 @@ void play_morse_char(struct player_config config) {
 }
 
 int thread_play_morse_char(void *arg) {
+  mtx_lock(&serial_mtx);
   struct player_config config = *(struct player_config *)arg;
   play_morse_char(config);
   free(config.code);
+  mtx_unlock(&serial_mtx);
   return 0;
 }
 
@@ -117,6 +122,7 @@ bool player_teardown() {
   free(g_symbolDataSources);
   free(g_symbolDataSources_length);
   free(device);
+  mtx_destroy(&serial_mtx);
 
   return true;
 }
