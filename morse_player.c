@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include <threads.h>
 
 #define DEVICE_FORMAT ma_format_f32
 #define DEVICE_CHANNELS 2
@@ -11,16 +12,6 @@
 static ma_waveform *g_symbolDataSources;
 static size_t *g_symbolDataSources_length;
 ma_event g_stopEvent;
-
-// Allocates enough memory to represent any morse sequence in morse_table
-// (including gaps)
-bool player_setup(size_t max_code_length) {
-  g_symbolDataSources_length = malloc(sizeof(size_t));
-  *g_symbolDataSources_length = 2 * max_code_length;
-  g_symbolDataSources =
-      malloc(*g_symbolDataSources_length * sizeof(ma_waveform));
-  return true;
-}
 
 void data_callback(ma_device *pDevice, void *pOutput, const void *pInput,
                    ma_uint32 frameCount) {
@@ -38,15 +29,25 @@ void data_callback(ma_device *pDevice, void *pOutput, const void *pInput,
   (void)pInput;
 }
 
-void play_morse_char(struct player_config config, char *code) {
+bool player_setup(size_t max_code_length) {
 
-  ma_result result;
+  // Allocate enough space for the maximum code length
+  g_symbolDataSources_length = malloc(sizeof(g_symbolDataSources_length));
+  *g_symbolDataSources_length = 2 * max_code_length;
+  g_symbolDataSources =
+      malloc(*g_symbolDataSources_length * sizeof(*g_symbolDataSources));
+  return true;
+}
+
+void play_morse_char(struct player_config config) {
+  char *code = config.code;
+  (void)code;
+
   int ditMS = 100; // TODO: real value
   int ditPCM = (ditMS * DEVICE_SAMPLE_RATE) / 1000;
-
   ma_waveform_config sineWaveConfig = ma_waveform_config_init(
       DEVICE_FORMAT, DEVICE_CHANNELS, DEVICE_SAMPLE_RATE, ma_waveform_type_sine,
-      config.amp, config.hz);
+      0.2, 800);
 
   for (size_t i = 0; i < strlen(code); i++) {
     // For each mark in code also create a short gap afterwards
@@ -67,23 +68,19 @@ void play_morse_char(struct player_config config, char *code) {
     ma_data_source_set_next(wave, gap);
   }
 
-  {
-    ma_device_config deviceConfig;
-    ma_device device;
+  ma_device_config deviceConfig;
+  deviceConfig = ma_device_config_init(ma_device_type_playback);
+  deviceConfig.playback.format = DEVICE_FORMAT;
+  deviceConfig.playback.channels = DEVICE_CHANNELS;
+  deviceConfig.sampleRate = DEVICE_SAMPLE_RATE;
+  deviceConfig.dataCallback = data_callback;
+  deviceConfig.pUserData = g_symbolDataSources;
 
-    deviceConfig = ma_device_config_init(ma_device_type_playback);
-    deviceConfig.playback.format = DEVICE_FORMAT;
-    deviceConfig.playback.channels = DEVICE_CHANNELS;
-    deviceConfig.sampleRate = DEVICE_SAMPLE_RATE;
-    deviceConfig.dataCallback = data_callback;
-    deviceConfig.pUserData = &g_symbolDataSources[0];
+  ma_device device;
+  ma_device_init(NULL, &deviceConfig, &device);
 
-    result = ma_device_init(NULL, &deviceConfig, &device);
-    if (result != MA_SUCCESS) {
-      printf("ERROR: Failed to initialize device.");
-    }
-
-    ma_event_init(&g_stopEvent);
+  ma_event_init(&g_stopEvent);
+    ma_result result;
     result = ma_device_start(&device);
     if (result != MA_SUCCESS) {
       printf("ERROR: Failed to start device.");
@@ -92,12 +89,20 @@ void play_morse_char(struct player_config config, char *code) {
 
     // Wait for playback to finish before cleanup
     ma_event_wait(&g_stopEvent);
+    result = ma_device_stop(&device);
+    if (result != MA_SUCCESS) {
+      printf("ERROR: Failed to stop device.");
+      ma_device_uninit(&device);
+    }
 
     ma_device_uninit(&device);
     for (size_t i = 0; i < *g_symbolDataSources_length; i++) {
       ma_waveform_uninit(&g_symbolDataSources[i]);
     }
-  }
+}
+int thread_play_morse_char(void *arg) {
+  play_morse_char(*(struct player_config *)arg);
+  return 0;
 }
 
 bool player_teardown() {
