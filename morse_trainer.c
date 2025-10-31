@@ -2,7 +2,6 @@
 #include "morse_player.h"
 #include "morse_table.h"
 #include <stddef.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <threads.h>
@@ -45,7 +44,7 @@ void trainer_start() {
   srand(time(NULL) + 1);
   g_morse_lookup = init_morse_table();
 
-  player_setup(max_code_length(g_morse_lookup));
+  // player_setup(max_code_length(g_morse_lookup));
 }
 
 void trainer_stop() {
@@ -79,12 +78,14 @@ void trainer_next() {
 }
 
 void trainer_play() {
-  // play_morse_char(config, g_morse_lookup[(int)current_char]->code);
   char *table_seq = g_morse_lookup[(int)current_char]->code;
   char *seq = malloc(strlen(table_seq) * sizeof(char));
   strcpy(seq, table_seq);
 
   struct player_config config = {.amp = 0.2, .hz = 800, .wpm = 25, .code = seq};
+
+  // play_morse_char(config);
+
   thrd_t thread;
   thrd_create(&thread, thread_play_morse_char, &config);
   thrd_detach(thread);

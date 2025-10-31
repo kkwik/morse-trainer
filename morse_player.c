@@ -32,7 +32,7 @@ void data_callback(ma_device *pDevice, void *pOutput, const void *pInput,
 }
 
 bool player_setup(size_t max_code_length) {
-  mtx_init(&serial_mtx, mtx_plain);
+  // mtx_init(&serial_mtx, mtx_plain);
   ma_device_config deviceConfig;
   deviceConfig = ma_device_config_init(ma_device_type_playback);
   deviceConfig.playback.format = DEVICE_FORMAT;
@@ -57,8 +57,9 @@ bool player_setup(size_t max_code_length) {
 
 void play_morse_char(struct player_config config) {
   char *code = config.code;
+  (void)code;
 
-  ma_result result;
+  // ma_result result;
   int ditMS = 100; // TODO: real value
   int ditPCM = (ditMS * DEVICE_SAMPLE_RATE) / 1000;
 
@@ -66,54 +67,85 @@ void play_morse_char(struct player_config config) {
       DEVICE_FORMAT, DEVICE_CHANNELS, DEVICE_SAMPLE_RATE, ma_waveform_type_sine,
       config.amp, config.hz);
 
-  for (size_t i = 0; i < strlen(code); i++) {
-    // For each mark in code also create a short gap afterwards
-    ma_waveform *wave = &g_symbolDataSources[2 * i];
-    ma_waveform_init(&sineWaveConfig, wave);
-    int markPCM = code[i] == '.' ? ditPCM : 3 * ditPCM;
-    ma_data_source_set_range_in_pcm_frames(wave, 0, markPCM);
+  // WARN: This doesn't work threaded
+  ma_waveform wave;
+  ma_waveform *fwave = &wave;
+  ma_waveform_init(&sineWaveConfig, fwave);
+  ma_data_source_set_range_in_pcm_frames(fwave, 0, ditPCM);
+  ma_device_config deviceConfig;
+  deviceConfig = ma_device_config_init(ma_device_type_playback);
+  deviceConfig.playback.format = DEVICE_FORMAT;
+  deviceConfig.playback.channels = DEVICE_CHANNELS;
+  deviceConfig.sampleRate = DEVICE_SAMPLE_RATE;
+  deviceConfig.dataCallback = data_callback;
+  deviceConfig.pUserData = fwave;
 
-    ma_waveform *gap = &g_symbolDataSources[(2 * i) + 1];
-    ma_waveform_init(&sineWaveConfig, gap);
-    ma_data_source_set_range_in_pcm_frames(gap, 0, ditPCM);
-    ma_waveform_set_amplitude(gap, 0.0);
+  ma_device d2;
+  ma_device_init(NULL, &deviceConfig, &d2);
+  ma_event_init(&g_stopEvent);
+  ma_device_start(&d2);
 
-    // Chain playback of data sources
-    if (i != 0) {
-      ma_data_source_set_next(&g_symbolDataSources[(2 * i) - 1], wave);
-    }
-    ma_data_source_set_next(wave, gap);
-  }
+  // Wait for playback to finish before cleanup
+  // ma_event_wait(&g_stopEvent);
+	getchar();
+  ma_device_stop(&d2);
+  ma_waveform_uninit(fwave);
+
+  // WARN: Engine does work
+  // ma_engine engine;
+  // ma_engine_init(NULL, &engine);
+  // ma_engine_play_sound(&engine, "test.wav", NULL);
+  // getchar();
+  // ma_engine_uninit(&engine);
+
+  // for (size_t i = 0; i < strlen(code); i++) {
+  //   // For each mark in code also create a short gap afterwards
+  //   ma_waveform *wave = &g_symbolDataSources[2 * i];
+  //   ma_waveform_init(&sineWaveConfig, wave);
+  //   int markPCM = code[i] == '.' ? ditPCM : 3 * ditPCM;
+  //   ma_data_source_set_range_in_pcm_frames(wave, 0, markPCM);
+  //
+  //   ma_waveform *gap = &g_symbolDataSources[(2 * i) + 1];
+  //   ma_waveform_init(&sineWaveConfig, gap);
+  //   ma_data_source_set_range_in_pcm_frames(gap, 0, ditPCM);
+  //   ma_waveform_set_amplitude(gap, 0.0);
+  //
+  //   // Chain playback of data sources
+  //   if (i != 0) {
+  //     ma_data_source_set_next(&g_symbolDataSources[(2 * i) - 1], wave);
+  //   }
+  //   ma_data_source_set_next(wave, gap);
+  // }
 
   {
-    device->pUserData = &g_symbolDataSources[0];
-    ma_event_init(&g_stopEvent);
-    result = ma_device_start(device);
-    if (result != MA_SUCCESS) {
-      printf("ERROR: Failed to start device.");
-      ma_device_uninit(device);
-    }
+    // device->pUserData = fwave;
+    // ma_event_init(&g_stopEvent);
+    // result = ma_device_start(device);
+    // if (result != MA_SUCCESS) {
+    //   printf("ERROR: Failed to start device.");
+    //   ma_device_uninit(device);
+    // }
+    //
+    // // Wait for playback to finish before cleanup
+    // ma_event_wait(&g_stopEvent);
+    // result = ma_device_stop(device);
+    // if (result != MA_SUCCESS) {
+    //   printf("ERROR: Failed to stop device.");
+    //   ma_device_uninit(device);
+    // }
 
-    // Wait for playback to finish before cleanup
-    ma_event_wait(&g_stopEvent);
-    result = ma_device_stop(device);
-    if (result != MA_SUCCESS) {
-      printf("ERROR: Failed to stop device.");
-      ma_device_uninit(device);
-    }
-
-    for (size_t i = 0; i < *g_symbolDataSources_length; i++) {
-      ma_waveform_uninit(&g_symbolDataSources[i]);
-    }
+    // for (size_t i = 0; i < *g_symbolDataSources_length; i++) {
+    //   ma_waveform_uninit(&g_symbolDataSources[i]);
+    // }
   }
 }
 
 int thread_play_morse_char(void *arg) {
-  mtx_lock(&serial_mtx);
+  // mtx_lock(&serial_mtx);
   struct player_config config = *(struct player_config *)arg;
   play_morse_char(config);
   free(config.code);
-  mtx_unlock(&serial_mtx);
+  // mtx_unlock(&serial_mtx);
   return 0;
 }
 
@@ -122,7 +154,7 @@ bool player_teardown() {
   free(g_symbolDataSources);
   free(g_symbolDataSources_length);
   free(device);
-  mtx_destroy(&serial_mtx);
+  // mtx_destroy(&serial_mtx);
 
   return true;
 }
