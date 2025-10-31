@@ -1,7 +1,10 @@
 #include "morse_trainer.h"
 #include <ncurses.h>
+#include <ncursesw/ncurses.h>
 #include <panel.h>
+#include <signal.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
 
 void ui_setup() {
@@ -23,29 +26,39 @@ void ui_teardown() { endwin(); }
 void exit_program(int sig) {
   (void)sig;
   trainer_stop();
+  ui_teardown();
   exit(0);
 }
+
 int main() {
   signal(SIGINT, exit_program);
 
   trainer_start();
   ui_setup();
   ui_draw();
+  refresh();
 
+  // General loop
   while (true) {
     trainer_next();
     trainer_play();
 
-    int ch = getch();
-    if (ch == KEY_RESIZE) {
-      clear();
-    }
-    char guess = sanitize_key_input(ch);
-    if (guess == 0) {
-      continue;
-    }
+    int ch;
+    char guess;
+    do {
+      ch = getch();
 
-    ui_draw();
+      // Handle special cases/input
+      switch (ch) {
+      case KEY_RESIZE:
+        clear();
+        ui_draw();
+        refresh();
+        continue; // break would allow special characters to be evaluated below
+      }
+
+      guess = sanitize_key_input(ch);
+    } while (guess == 0);
 
     char msg[20] = "Your guess: ";
     strncat(msg, &guess, 1);
@@ -64,6 +77,6 @@ int main() {
     mvwprintw(stdscr, y + 1, x, "%s", msg2);
   }
 
-  trainer_stop();
+  exit_program(0); // Just here incase I change the logic later
   return 0;
 }

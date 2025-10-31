@@ -2,7 +2,6 @@
 #include "morse_player.h"
 #include "morse_table.h"
 #include <stddef.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 
