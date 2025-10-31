@@ -8,19 +8,10 @@
 #define DEVICE_CHANNELS 2
 #define DEVICE_SAMPLE_RATE 48000
 
+ma_device *device;
 static ma_waveform *g_symbolDataSources;
 static size_t *g_symbolDataSources_length;
 ma_event g_stopEvent;
-
-// Allocates enough memory to represent any morse sequence in morse_table
-// (including gaps)
-bool player_setup(size_t max_code_length) {
-  g_symbolDataSources_length = malloc(sizeof(size_t));
-  *g_symbolDataSources_length = 2 * max_code_length;
-  g_symbolDataSources =
-      malloc(*g_symbolDataSources_length * sizeof(ma_waveform));
-  return true;
-}
 
 void data_callback(ma_device *pDevice, void *pOutput, const void *pInput,
                    ma_uint32 frameCount) {
@@ -36,6 +27,29 @@ void data_callback(ma_device *pDevice, void *pOutput, const void *pInput,
   }
 
   (void)pInput;
+}
+
+bool player_setup(size_t max_code_length) {
+  ma_device_config deviceConfig;
+  deviceConfig = ma_device_config_init(ma_device_type_playback);
+  deviceConfig.playback.format = DEVICE_FORMAT;
+  deviceConfig.playback.channels = DEVICE_CHANNELS;
+  deviceConfig.sampleRate = DEVICE_SAMPLE_RATE;
+  deviceConfig.dataCallback = data_callback;
+  deviceConfig.pUserData = NULL;
+
+  device = malloc(sizeof(*device));
+  ma_result result = ma_device_init(NULL, &deviceConfig, device);
+  if (result != MA_SUCCESS) {
+    printf("ERROR: Failed to initialize device.");
+  }
+
+  // Allocate enough space for the maximum code length
+  g_symbolDataSources_length = malloc(sizeof(g_symbolDataSources_length));
+  *g_symbolDataSources_length = 2 * max_code_length;
+  g_symbolDataSources =
+      malloc(*g_symbolDataSources_length * sizeof(*g_symbolDataSources));
+  return true;
 }
 
 void play_morse_char(struct player_config config, char *code) {
@@ -68,32 +82,22 @@ void play_morse_char(struct player_config config, char *code) {
   }
 
   {
-    ma_device_config deviceConfig;
-    ma_device device;
-
-    deviceConfig = ma_device_config_init(ma_device_type_playback);
-    deviceConfig.playback.format = DEVICE_FORMAT;
-    deviceConfig.playback.channels = DEVICE_CHANNELS;
-    deviceConfig.sampleRate = DEVICE_SAMPLE_RATE;
-    deviceConfig.dataCallback = data_callback;
-    deviceConfig.pUserData = &g_symbolDataSources[0];
-
-    result = ma_device_init(NULL, &deviceConfig, &device);
-    if (result != MA_SUCCESS) {
-      printf("ERROR: Failed to initialize device.");
-    }
-
+    device->pUserData = &g_symbolDataSources[0];
     ma_event_init(&g_stopEvent);
-    result = ma_device_start(&device);
+    result = ma_device_start(device);
     if (result != MA_SUCCESS) {
       printf("ERROR: Failed to start device.");
-      ma_device_uninit(&device);
+      ma_device_uninit(device);
     }
 
     // Wait for playback to finish before cleanup
     ma_event_wait(&g_stopEvent);
+    result = ma_device_stop(device);
+    if (result != MA_SUCCESS) {
+      printf("ERROR: Failed to stop device.");
+      ma_device_uninit(device);
+    }
 
-    ma_device_uninit(&device);
     for (size_t i = 0; i < *g_symbolDataSources_length; i++) {
       ma_waveform_uninit(&g_symbolDataSources[i]);
     }
@@ -101,8 +105,10 @@ void play_morse_char(struct player_config config, char *code) {
 }
 
 bool player_teardown() {
+  ma_device_uninit(device);
   free(g_symbolDataSources);
   free(g_symbolDataSources_length);
+  free(device);
 
   return true;
 }
