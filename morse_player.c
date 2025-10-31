@@ -21,6 +21,7 @@ void data_callback(ma_device *pDevice, void *pOutput, const void *pInput,
   if (pDecoder == NULL) {
     return;
   }
+  printf("Callback called\n");
 
   unsigned long long framesRead;
   ma_data_source_read_pcm_frames(pDecoder, pOutput, frameCount, &framesRead);
@@ -87,7 +88,7 @@ void play_morse_char(struct player_config config) {
 
   // Wait for playback to finish before cleanup
   // ma_event_wait(&g_stopEvent);
-	getchar();
+  getchar();
   ma_device_stop(&d2);
   ma_waveform_uninit(fwave);
 
@@ -139,13 +140,46 @@ void play_morse_char(struct player_config config) {
     // }
   }
 }
-
 int thread_play_morse_char(void *arg) {
-  // mtx_lock(&serial_mtx);
-  struct player_config config = *(struct player_config *)arg;
-  play_morse_char(config);
-  free(config.code);
-  // mtx_unlock(&serial_mtx);
+  (void)arg;
+  ma_waveform sineWave;
+  ma_device_config deviceConfig;
+  ma_device device;
+  ma_waveform_config sineWaveConfig;
+
+  deviceConfig = ma_device_config_init(ma_device_type_playback);
+  deviceConfig.playback.format = DEVICE_FORMAT;
+  deviceConfig.playback.channels = DEVICE_CHANNELS;
+  deviceConfig.sampleRate = DEVICE_SAMPLE_RATE;
+  deviceConfig.dataCallback = data_callback;
+  deviceConfig.pUserData = &sineWave;
+
+  if (ma_device_init(NULL, &deviceConfig, &device) != MA_SUCCESS) {
+    printf("Failed to open playback device.\n");
+    return -4;
+  }
+
+  sineWaveConfig = ma_waveform_config_init(
+      device.playback.format, device.playback.channels, device.sampleRate,
+      ma_waveform_type_sine, 0.2, 220);
+  ma_waveform_init(&sineWaveConfig, &sineWave);
+  ma_data_source_set_range_in_pcm_frames(&sineWave, 0, 10900);
+  ma_event_init(&g_stopEvent);
+
+  if (ma_device_start(&device) != MA_SUCCESS) {
+    printf("Failed to start playback device.\n");
+    ma_device_uninit(&device);
+    return -5;
+  }
+
+  ma_event_wait(&g_stopEvent);
+  printf("Thread end\n");
+  ma_device_uninit(&device);
+  ma_waveform_uninit(
+      &sineWave); /* Uninitialize the waveform after the device so we don't pull
+                     it from under the device while it's being reference in the
+                     data callback. */
+
   return 0;
 }
 
