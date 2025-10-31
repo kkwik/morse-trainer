@@ -20,7 +20,14 @@ void ui_draw() {
 
 void ui_teardown() { endwin(); }
 
+void exit_program(int sig) {
+  (void)sig;
+  trainer_stop();
+  exit(0);
+}
 int main() {
+  signal(SIGINT, exit_program);
+
   trainer_start();
   ui_setup();
   ui_draw();
