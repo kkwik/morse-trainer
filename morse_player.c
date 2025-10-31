@@ -52,7 +52,8 @@ bool player_setup(size_t max_code_length) {
   return true;
 }
 
-void play_morse_char(struct player_config config, char *code) {
+void play_morse_char(struct player_config config) {
+  char *code = config.code;
 
   ma_result result;
   int ditMS = 100; // TODO: real value
@@ -102,6 +103,13 @@ void play_morse_char(struct player_config config, char *code) {
       ma_waveform_uninit(&g_symbolDataSources[i]);
     }
   }
+}
+
+int thread_play_morse_char(void *arg) {
+  struct player_config config = *(struct player_config *)arg;
+  play_morse_char(config);
+  free(config.code);
+  return 0;
 }
 
 bool player_teardown() {
