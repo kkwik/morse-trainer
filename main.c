@@ -28,6 +28,7 @@ int main() {
   while (true) {
     trainer_next();
     trainer_play();
+
     int ch = getch();
     if (ch == KEY_RESIZE) {
       clear();
@@ -39,7 +40,7 @@ int main() {
 
     ui_draw();
 
-    char msg[20] = "You guessed: ";
+    char msg[20] = "Your guess: ";
     strncat(msg, &guess, 1);
 
     int y, x;
@@ -50,8 +51,10 @@ int main() {
 
     refresh();
 
-    bool correct = trainer_guess(guess);
-		(void)correct;
+    char answer = trainer_guess(guess);
+    char msg2[20] = "The answer was: ";
+    strncat(msg2, &answer, 1);
+    mvwprintw(stdscr, y + 1, x, "%s", msg2);
   }
 
   trainer_stop();
