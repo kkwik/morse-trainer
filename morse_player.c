@@ -39,9 +39,8 @@ bool player_setup(size_t max_code_length) {
   return true;
 }
 
-void play_morse_char(struct player_config config) {
-  char *code = config.code;
-  (void)code;
+void play_morse_char(struct player_config *config) {
+  char *code = config->code;
 
   int ditMS = 100; // TODO: real value
   int ditPCM = (ditMS * DEVICE_SAMPLE_RATE) / 1000;
@@ -80,28 +79,35 @@ void play_morse_char(struct player_config config) {
   ma_device_init(NULL, &deviceConfig, &device);
 
   ma_event_init(&g_stopEvent);
-    ma_result result;
-    result = ma_device_start(&device);
-    if (result != MA_SUCCESS) {
-      printf("ERROR: Failed to start device.");
-      ma_device_uninit(&device);
-    }
-
-    // Wait for playback to finish before cleanup
-    ma_event_wait(&g_stopEvent);
-    result = ma_device_stop(&device);
-    if (result != MA_SUCCESS) {
-      printf("ERROR: Failed to stop device.");
-      ma_device_uninit(&device);
-    }
-
+  ma_result result;
+  result = ma_device_start(&device);
+  if (result != MA_SUCCESS) {
+    printf("ERROR: Failed to start device.");
     ma_device_uninit(&device);
-    for (size_t i = 0; i < *g_symbolDataSources_length; i++) {
-      ma_waveform_uninit(&g_symbolDataSources[i]);
-    }
+  }
+
+  // Wait for playback to finish before cleanup
+  ma_event_wait(&g_stopEvent);
+  result = ma_device_stop(&device);
+  if (result != MA_SUCCESS) {
+    printf("ERROR: Failed to stop device.");
+    ma_device_uninit(&device);
+  }
+
+  ma_device_uninit(&device);
+  for (size_t i = 0; i < *g_symbolDataSources_length; i++) {
+    ma_waveform_uninit(&g_symbolDataSources[i]);
+  }
 }
+
 int thread_play_morse_char(void *arg) {
-  play_morse_char(*(struct player_config *)arg);
+  struct player_config *config = (struct player_config *)arg;
+  play_morse_char(config);
+
+  // Cleanup
+  free(config->code);
+  free(config);
+
   return 0;
 }
 

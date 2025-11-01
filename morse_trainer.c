@@ -85,10 +85,14 @@ void trainer_play() {
   char *seq = malloc(strlen(table_seq) * sizeof(char));
   strcpy(seq, table_seq);
 
-  struct player_config config = {.amp = 0.2, .hz = 800, .wpm = 25, .code = seq};
+  struct player_config *config = malloc(sizeof(struct player_config));
+  config->amp = 0.2;
+  config->hz = 800;
+  config->wpm = 25;
+  config->code = seq;
 
   thrd_t thread;
-  thrd_create(&thread, thread_play_morse_char, &config);
+  thrd_create(&thread, thread_play_morse_char, config);
   thrd_detach(thread);
   mtx_unlock(&serial_mtx);
 }
