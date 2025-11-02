@@ -11,6 +11,7 @@
 
 static ma_waveform *g_symbolDataSources;
 static size_t *g_symbolDataSources_length;
+mtx_t mutex;
 ma_event g_stopEvent;
 
 void data_callback(ma_device *pDevice, void *pOutput, const void *pInput,
@@ -30,6 +31,7 @@ void data_callback(ma_device *pDevice, void *pOutput, const void *pInput,
 }
 
 bool player_setup(size_t max_code_length) {
+  mtx_init(&mutex, mtx_plain);
 
   // Allocate enough space for the maximum code length
   g_symbolDataSources_length = malloc(sizeof(g_symbolDataSources_length));
@@ -101,6 +103,7 @@ void play_morse_char(struct player_config *config) {
 }
 
 int thread_play_morse_char(void *arg) {
+  mtx_lock(&mutex);
   struct player_config *config = (struct player_config *)arg;
   play_morse_char(config);
 
@@ -108,12 +111,16 @@ int thread_play_morse_char(void *arg) {
   free(config->code);
   free(config);
 
+  mtx_unlock(&mutex);
+
   return 0;
 }
 
 bool player_teardown() {
   free(g_symbolDataSources);
   free(g_symbolDataSources_length);
+
+  mtx_destroy(&mutex);
 
   return true;
 }

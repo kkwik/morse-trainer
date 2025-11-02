@@ -8,7 +8,6 @@
 #include <time.h>
 
 struct morse_entry **g_morse_lookup;
-mtx_t serial_mtx;
 char current_char;
 
 char sanitize_key_input(char ch_in) {
@@ -41,7 +40,6 @@ void increment_score(char ch) {
 }
 
 void trainer_start() {
-  mtx_init(&serial_mtx, mtx_plain);
   srand(time(NULL) + 1);
   g_morse_lookup = init_morse_table();
 
@@ -51,7 +49,6 @@ void trainer_start() {
 void trainer_stop() {
   uninit_morse_table(g_morse_lookup);
   player_teardown();
-  mtx_destroy(&serial_mtx);
 }
 
 void trainer_next() {
@@ -80,7 +77,6 @@ void trainer_next() {
 }
 
 void trainer_play() {
-  mtx_lock(&serial_mtx);
   char *table_seq = g_morse_lookup[(int)current_char]->code;
   char *seq = malloc(strlen(table_seq) * sizeof(char));
   strcpy(seq, table_seq);
@@ -94,7 +90,6 @@ void trainer_play() {
   thrd_t thread;
   thrd_create(&thread, thread_play_morse_char, config);
   thrd_detach(thread);
-  mtx_unlock(&serial_mtx);
 }
 
 char trainer_guess(char ch) {
