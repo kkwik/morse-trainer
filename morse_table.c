@@ -19,7 +19,7 @@ struct morse_entry *init_entry(char *seq) {
   struct morse_entry *entry = malloc(sizeof(struct morse_entry));
   entry->code = malloc(strlen(seq) * sizeof(char));
   strcpy(entry->code, seq);
-  entry->score = 1;
+  entry->score = 50;
   return entry;
 }
 
