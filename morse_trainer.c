@@ -16,7 +16,7 @@ char sanitize_key_input(char ch_in) {
     return ' '; // This check might be useless, gcc seems to think so
   }
 
-  if (ch_in > 'a' && ch_in < 'z') {
+  if (ch_in >= 'a' && ch_in <= 'z') {
     return ch_in - 32; // Capitalize
   }
 
