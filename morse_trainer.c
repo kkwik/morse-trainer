@@ -29,13 +29,13 @@ char sanitize_key_input(char ch_in) {
 
 void decrement_score(char ch) {
   if (g_morse_lookup[(int)ch]->score > 1) {
-    g_morse_lookup[(int)current_char]->score--;
+    g_morse_lookup[(int)ch]->score--;
   }
 }
 
 void increment_score(char ch) {
   if (g_morse_lookup[(int)ch]->score < MAX_SCORE) {
-    g_morse_lookup[(int)current_char]->score++;
+    g_morse_lookup[(int)ch]->score++;
   }
 }
 
