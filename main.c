@@ -1,3 +1,4 @@
+#include "morse_table.h"
 #include "morse_trainer.h"
 #include <ncurses.h>
 #include <ncursesw/ncurses.h>
@@ -6,6 +7,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+
+int **scores;
 
 void ui_setup() {
   initscr();
@@ -34,6 +37,9 @@ int main() {
   signal(SIGINT, exit_program);
 
   trainer_start();
+  int *buffer[MORSE_TABLE_LENGTH] = {NULL};
+  scores = trainer_stats(buffer, MORSE_TABLE_LENGTH);
+
   ui_setup();
   ui_draw();
   refresh();

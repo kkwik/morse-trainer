@@ -2,12 +2,14 @@
 #include "morse_player.h"
 #include "morse_table.h"
 #include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <threads.h>
 #include <time.h>
 
 struct morse_entry **g_morse_lookup;
+int **morse_scores;
 char current_char;
 
 char sanitize_key_input(char ch_in) {
@@ -39,16 +41,32 @@ void increment_score(char ch) {
   }
 }
 
+int **trainer_stats(int **buffer, int buffer_size) {
+  if (buffer_size < MORSE_TABLE_LENGTH) {
+    return NULL;
+  }
+
+  for (int i = 0; i < buffer_size; i++) {
+    if (g_morse_lookup[i]) {
+      buffer[i] = &g_morse_lookup[i]->score;
+    }
+  }
+  return buffer;
+}
+
 void trainer_start() {
   srand(time(NULL) + 1);
   g_morse_lookup = init_morse_table();
 
   player_setup(max_code_length(g_morse_lookup));
+  morse_scores = malloc(MORSE_TABLE_LENGTH * sizeof(int *));
+  morse_scores = trainer_stats(morse_scores, MORSE_TABLE_LENGTH);
 }
 
 void trainer_stop() {
   uninit_morse_table(g_morse_lookup);
   player_teardown();
+  free(morse_scores);
 }
 
 void trainer_next() {
