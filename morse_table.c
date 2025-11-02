@@ -33,11 +33,7 @@ void uninit_entry(struct morse_entry *entry) {
 // The size of the array is of course idiotically oversized
 struct morse_entry **init_morse_table() {
   struct morse_entry **table;
-  table = malloc(MORSE_TABLE_LENGTH * sizeof(struct morse_entry *));
-  // Do one pass through to make sure all the pointers are null
-  for (int i = 0; i < MORSE_TABLE_LENGTH; i++) {
-    table[i] = NULL;
-  }
+  table = calloc(MORSE_TABLE_LENGTH, sizeof(struct morse_entry *));
 
   table['!'] = init_entry("-.-.--");
   table['"'] = init_entry(".-..-.");
