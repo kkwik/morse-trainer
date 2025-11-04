@@ -3,16 +3,17 @@
 #define MORSE_TABLE_H
 
 #include <stddef.h>
-#define MORSE_TABLE_LENGTH 128
-#define MAX_SCORE 100
+#define MORSE_TABLE_BUFFER_SIZE 128
+#define MAX_SCORE 99
 
 struct morse_entry {
-  char *code;
+  const char *code;
   int score;
 };
 
-size_t max_code_length(struct morse_entry **);
 struct morse_entry **init_morse_table();
-void uninit_morse_table(struct morse_entry **);
+int table_size();
+size_t table_max_code_length();
+void uninit_morse_table();
 
 #endif
