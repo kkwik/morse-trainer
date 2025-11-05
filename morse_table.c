@@ -5,9 +5,9 @@
 
 // Variables meant to be extern'd elsewhere
 // Assigned in the process of init'ing
-int table_entry_count = 0;
-size_t table_max_code_size = 0;
-struct morse_entry **morse_table = NULL;
+static int table_entry_count = 0;
+static size_t table_max_code_size = 0;
+static struct morse_entry **morse_table = NULL;
 
 struct morse_entry *init_entry(char *seq) {
   // Compute and set maximum code length

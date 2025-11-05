@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-int **scores;
+static const struct morse_entry **morse_table;
 
 void ui_setup() {
   initscr();
@@ -16,6 +16,32 @@ void ui_setup() {
   cbreak();
   keypad(stdscr, TRUE);
   curs_set(1);
+}
+
+void ui_draw_stats() {
+  int stat_col_width = 6; // 6 cols to display each stat: i.e. ' A=99 '
+  int row_top_padding = 2;
+  int col_side_padding = 2;
+  int stat_col_count = (COLS - (2 * col_side_padding)) /
+                       stat_col_width; // 2 cols on either side for padding
+
+  int code_count = 0; // Since code locations are not contiguous we need to
+                      // track which code we are on separately from i
+  for (int i = 0; i < MORSE_TABLE_BUFFER_SIZE; i++) {
+    if (!morse_table[i]) {
+      continue;
+    }
+
+    int row = code_count / stat_col_count;
+    int col = code_count % stat_col_count;
+
+    int x, y;
+    y = row + row_top_padding;
+    x = col_side_padding + (col * stat_col_width);
+
+    mvwprintw(stdscr, y, x, " %c=%2d ", (char)i, morse_table[i]->score);
+    code_count++;
+  }
 }
 
 // TODO: rename to something more accurate
@@ -37,11 +63,12 @@ int main() {
   signal(SIGINT, exit_program);
 
   trainer_start();
-  int *buffer[MORSE_TABLE_LENGTH] = {NULL};
-  scores = trainer_stats(buffer, MORSE_TABLE_LENGTH);
+  const struct morse_entry *buffer[MORSE_TABLE_BUFFER_SIZE] = {NULL};
+  morse_table = trainer_get_table(buffer, MORSE_TABLE_BUFFER_SIZE);
 
   ui_setup();
   ui_draw();
+  ui_draw_stats();
   refresh();
 
   // General loop
@@ -75,12 +102,13 @@ int main() {
     x = (x * 0.5) - strlen(msg);
     mvwprintw(stdscr, y, x, "%s", msg);
 
-    refresh();
-
     char answer = trainer_guess(guess);
     char msg2[20] = "The answer was: ";
     strncat(msg2, &answer, 1);
     mvwprintw(stdscr, y + 1, x, "%s", msg2);
+
+    ui_draw_stats();
+    refresh();
   }
 
   exit_program(0); // Just here incase I change the logic later

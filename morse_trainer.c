@@ -2,12 +2,13 @@
 #include "morse_player.h"
 #include "morse_table.h"
 #include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <threads.h>
 #include <time.h>
 
-struct morse_entry **morse_table;
+static struct morse_entry **morse_table;
 char current_char;
 
 char sanitize_key_input(char ch_in) {
@@ -39,17 +40,18 @@ void increment_score(char ch) {
   }
 }
 
-int **trainer_stats(int **buffer, int buffer_size) {
+const struct morse_entry **trainer_get_table(const struct morse_entry **buffer,
+                                             int buffer_size) {
   if (buffer_size < MORSE_TABLE_BUFFER_SIZE) {
     return NULL;
   }
 
   for (int i = 0; i < buffer_size; i++) {
     if (morse_table[i]) {
-      buffer[i] = &morse_table[i]->score;
+      buffer[i] = morse_table[i];
     }
   }
-  return buffer;
+  return (const struct morse_entry **)buffer;
 }
 
 void trainer_start() {

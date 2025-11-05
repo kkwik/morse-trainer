@@ -3,7 +3,8 @@
 #include <stdbool.h>
 
 char sanitize_key_input(char in);
-int **trainer_stats(int **buffer, int buffer_size);
+const struct morse_entry **trainer_get_table(const struct morse_entry **buffer,
+                                             int buffer_size);
 void trainer_start();
 void trainer_next();
 void trainer_play();
