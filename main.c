@@ -65,6 +65,10 @@ int main() {
   trainer_start();
   const struct morse_entry *buffer[MORSE_TABLE_BUFFER_SIZE] = {NULL};
   morse_table = trainer_get_table(buffer, MORSE_TABLE_BUFFER_SIZE);
+  if (morse_table == NULL) {
+    printf("Could not allocate morse table");
+    return -1;
+  }
 
   ui_setup();
   ui_draw();

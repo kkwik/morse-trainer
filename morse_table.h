@@ -12,8 +12,8 @@ struct morse_entry {
 };
 
 struct morse_entry **init_morse_table();
-int table_size();
-size_t table_max_code_length();
 void uninit_morse_table();
+int get_table_entry_count();
+size_t get_table_max_code_length();
 
 #endif

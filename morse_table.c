@@ -3,17 +3,16 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Variables meant to be extern'd elsewhere
 // Assigned in the process of init'ing
 static int table_entry_count = 0;
-static size_t table_max_code_size = 0;
+static size_t table_max_code_length = 0;
 static struct morse_entry **morse_table = NULL;
 
 struct morse_entry *init_entry(char *seq) {
   // Compute and set maximum code length
   size_t seq_len = strlen(seq);
-  if (seq_len > table_max_code_size) {
-    table_max_code_size = seq_len;
+  if (seq_len > table_max_code_length) {
+    table_max_code_length = seq_len;
   }
 
   struct morse_entry *entry = malloc(sizeof(struct morse_entry));
@@ -98,17 +97,18 @@ struct morse_entry **init_morse_table() {
   return morse_table;
 }
 
-int table_size() { return table_entry_count; }
-
-size_t table_max_code_length() { return table_max_code_size; }
-
 void uninit_morse_table() {
-  // Free structs first
-  for (int i = 0; i < MORSE_TABLE_BUFFER_SIZE; i++) {
-    if (morse_table[i]) {
-      uninit_entry(morse_table[i]);
-    }
-  }
+	// Free structs first
+	for (int i = 0; i < MORSE_TABLE_BUFFER_SIZE; i++) {
+		if (morse_table[i]) {
+			uninit_entry(morse_table[i]);
+		}
+	}
 
-  free(morse_table);
+	free(morse_table);
 }
+
+int get_table_entry_count() { return table_entry_count; }
+
+size_t get_table_max_code_length() { return table_max_code_length; }
+

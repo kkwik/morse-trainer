@@ -2,7 +2,6 @@
 #include "morse_player.h"
 #include "morse_table.h"
 #include <stddef.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <threads.h>
@@ -58,7 +57,7 @@ void trainer_start() {
   srand(time(NULL) + 1);
   morse_table = init_morse_table();
 
-  player_setup(table_max_code_length());
+  player_setup(get_table_max_code_length());
 }
 
 void trainer_stop() {
@@ -70,6 +69,8 @@ void trainer_next() {
   // Runs two passes through the morse table to calculate the total score and
   // then make a choice bounded by that total. Definitely more efficient ways to
   // do this
+  // TODO: Could add an int to the table and track total_score through that.
+  // Would require synchronization anytime score is updated
 
   current_char = 'F';
   int total_score = 0;
@@ -91,6 +92,14 @@ void trainer_next() {
   }
 }
 
+// TODO: the current implementation uses a mutex to prevent multiple threads
+// playing at the same time, but this results in a queue of threads forming to
+// play. If the user is entering keys without actually listening to the sequence
+// this can cause a desync of what is being played vs what the program is
+// expecting the user to be guessing for. This is an edge case that shouldn't
+// really occur for a legitimate user (because answering without hearing the
+// whole sequence is not possible) but really it would be nice for the next
+// request to play to cancel the current one
 void trainer_play() {
   const char *table_seq = morse_table[(int)current_char]->code;
   char *seq = malloc(strlen(table_seq) * sizeof(char));
