@@ -48,6 +48,7 @@ void ui_draw_stats() {
 void ui_draw() {
   border(0, 0, 0, 0, 0, 0, 0, 0);
   mvwprintw(stdscr, 0, 2, "Morse Trainer");
+  ui_draw_stats();
 }
 
 void ui_teardown() { endwin(); }
@@ -72,7 +73,6 @@ int main() {
 
   ui_setup();
   ui_draw();
-  ui_draw_stats();
   refresh();
 
   // General loop
@@ -80,10 +80,11 @@ int main() {
     trainer_next();
     trainer_play();
 
-    int ch;
-    char guess;
+    int ch = 0;
+    char guess = 0;
     do {
       ch = getch();
+      guess = sanitize_key_input(ch);
 
       // Handle special cases/input
       switch (ch) {
@@ -91,10 +92,8 @@ int main() {
         clear();
         ui_draw();
         refresh();
-        continue; // break would allow special characters to be evaluated below
+        continue;
       }
-
-      guess = sanitize_key_input(ch);
     } while (guess == 0);
 
     char msg[20] = "Your guess: ";
@@ -111,7 +110,7 @@ int main() {
     strncat(msg2, &answer, 1);
     mvwprintw(stdscr, y + 1, x, "%s", msg2);
 
-    ui_draw_stats();
+    ui_draw();
     refresh();
   }
 
