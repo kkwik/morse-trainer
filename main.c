@@ -11,7 +11,7 @@
 #include <string.h>
 
 static const struct morse_entry **morse_table;
-static struct guess_history history = {.capacity = 10, .latest = 0};
+static struct guess_history history;
 
 // NCURSES Windows
 WINDOW *history_w;
@@ -34,6 +34,10 @@ void ui_draw_history() {
   height -= 2 * border_margin;
 
   for (int i = 0; i < history.capacity; i++) {
+    if (height - i <= 0) {
+      // We've reached the top of the window, cannot draw more
+      break;
+    }
 
     struct guess_entry entry;
     if (history_get_entry(&entry, &history, i)) {
@@ -139,7 +143,7 @@ int main() {
     return -1;
   }
 
-  history = *init_history(&history, 10);
+  history = *init_history(&history, 100);
 
   ui_setup();
   ui_redraw_all_windows();
