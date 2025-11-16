@@ -5,6 +5,7 @@
 #include <stddef.h>
 #define MORSE_TABLE_BUFFER_SIZE 128
 #define MAX_SCORE 99
+#define DEFAULT_SCORE 50
 
 struct morse_entry {
   const char *code;

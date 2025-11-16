@@ -2,6 +2,7 @@
 #include "morse_table.h"
 #include "morse_trainer.h"
 #include <assert.h>
+#include <locale.h>
 #include <ncurses.h>
 #include <ncursesw/ncurses.h>
 #include <panel.h>
@@ -18,7 +19,18 @@ WINDOW *history_w;
 WINDOW *main_w;
 WINDOW *stats_w;
 
+char *progress_indicator[9] = {" ",
+                               "\xE2\x96\x8F",
+                               "\xE2\x96\x8E",
+                               "\xE2\x96\x8D",
+                               "\xE2\x96\x8C",
+                               "\xE2\x96\x8B",
+                               "\xE2\x96\x8A",
+                               "\xE2\x96\x89",
+                               "\xE2\x96\x88"};
+
 void ui_setup() {
+  setlocale(LC_ALL, "");
   initscr();
   noecho();
   cbreak();
@@ -59,6 +71,8 @@ void ui_draw_stats() {
   width -= 2 * border_margin;
   height -= 2 * border_margin;
 
+  int stat_blocks = 11; // This is derived from MAX_SCORE / 9 progress segments
+
   int code_count = 0; // Since code locations are not contiguous we need to
                       // track which code we are on separately from i
   for (int i = 0; i < MORSE_TABLE_BUFFER_SIZE; i++) {
@@ -66,8 +80,21 @@ void ui_draw_stats() {
       continue;
     }
 
-    mvwprintw(stats_w, border_margin + code_count, border_margin, " %c=%2d ",
-              (char)i, morse_table[i]->score);
+    mvwprintw(stats_w, border_margin + code_count, border_margin, "%c ",
+              (char)i);
+    int entry_score = morse_table[i]->score;
+    int complete_blocks = entry_score / 9;
+    int in_progress_block = entry_score % 9;
+
+    for (int drawn_blocks = 0; drawn_blocks < stat_blocks; drawn_blocks++) {
+      if (complete_blocks-- > 0) {
+        wprintw(stats_w, "%s", progress_indicator[8]);
+      } else {
+        wprintw(stats_w, "%s", progress_indicator[in_progress_block]);
+        in_progress_block = 0; // Set to zero so any remaining blocks are empty
+      }
+    }
+
     code_count++;
   }
   wrefresh(stats_w);
