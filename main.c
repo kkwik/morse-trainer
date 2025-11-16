@@ -1,5 +1,7 @@
+#include "guess_history.h"
 #include "morse_table.h"
 #include "morse_trainer.h"
+#include <assert.h>
 #include <ncurses.h>
 #include <ncursesw/ncurses.h>
 #include <panel.h>
@@ -9,6 +11,7 @@
 #include <string.h>
 
 static const struct morse_entry **morse_table;
+static struct guess_history history = {.capacity = 10, .latest = 0};
 
 void ui_setup() {
   initscr();
@@ -16,6 +19,19 @@ void ui_setup() {
   cbreak();
   keypad(stdscr, TRUE);
   curs_set(1);
+}
+
+void ui_draw_history() {
+  int bottom = LINES - 2;
+
+  for (int i = 0; i < history.capacity; i++) {
+
+    struct guess_entry entry;
+    if (history_get_entry(&entry, &history, i)) {
+      mvwprintw(stdscr, bottom - i, 2, "Played %c, you answered %c",
+                entry.answer, entry.guess);
+    }
+  }
 }
 
 void ui_draw_stats() {
@@ -49,6 +65,7 @@ void ui_draw() {
   border(0, 0, 0, 0, 0, 0, 0, 0);
   mvwprintw(stdscr, 0, 2, "Morse Trainer");
   ui_draw_stats();
+  ui_draw_history();
 }
 
 void ui_teardown() { endwin(); }
@@ -70,6 +87,8 @@ int main() {
     printf("Could not allocate morse table");
     return -1;
   }
+
+  history = *init_history(&history, 10);
 
   ui_setup();
   ui_draw();
@@ -106,6 +125,8 @@ int main() {
     mvwprintw(stdscr, y, x, "%s", msg);
 
     char answer = trainer_guess(guess);
+    history_add(&history, guess, answer);
+
     char msg2[20] = "The answer was: ";
     strncat(msg2, &answer, 1);
     mvwprintw(stdscr, y + 1, x, "%s", msg2);
