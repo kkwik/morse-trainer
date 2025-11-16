@@ -28,8 +28,9 @@ void ui_draw_history() {
 
     struct guess_entry entry;
     if (history_get_entry(&entry, &history, i)) {
-      mvwprintw(stdscr, bottom - i, 2, "Played %c, you answered %c",
-                entry.answer, entry.guess);
+      mvwprintw(stdscr, bottom - i, 2, "Played %c [%s], you answered %c [%s]",
+                entry.answer, morse_table[(int)entry.answer]->code, entry.guess,
+                morse_table[(int)entry.guess]->code);
     }
   }
 }
@@ -62,10 +63,12 @@ void ui_draw_stats() {
 
 // TODO: rename to something more accurate
 void ui_draw() {
+  clear();
   border(0, 0, 0, 0, 0, 0, 0, 0);
   mvwprintw(stdscr, 0, 2, "Morse Trainer");
   ui_draw_stats();
   ui_draw_history();
+  refresh();
 }
 
 void ui_teardown() { endwin(); }
@@ -92,7 +95,6 @@ int main() {
 
   ui_setup();
   ui_draw();
-  refresh();
 
   // General loop
   while (true) {
@@ -108,9 +110,7 @@ int main() {
       // Handle special cases/input
       switch (ch) {
       case KEY_RESIZE:
-        clear();
         ui_draw();
-        refresh();
         continue;
       }
     } while (guess == 0);
@@ -132,7 +132,6 @@ int main() {
     mvwprintw(stdscr, y + 1, x, "%s", msg2);
 
     ui_draw();
-    refresh();
   }
 
   exit_program(0); // Just here incase I change the logic later
