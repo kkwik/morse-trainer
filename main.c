@@ -57,6 +57,16 @@ void ui_draw_history() {
                 "Played %c [%s], you answered %c [%s]", entry.answer,
                 morse_table[(int)entry.answer]->code, entry.guess,
                 morse_table[(int)entry.guess]->code);
+
+      // Clear out any characters from the end of this line to the border
+      // Avoids a full wrefresh
+      int curs_y, curs_x;
+      getyx(history_w, curs_y, curs_x);
+      (void)curs_y;
+      int line_remaining = width - curs_x;
+      for (int l = 0; l <= line_remaining; l++) {
+        wprintw(history_w, " ");
+      }
     }
   }
   wrefresh(history_w);
