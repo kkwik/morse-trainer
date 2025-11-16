@@ -123,10 +123,10 @@ char trainer_guess(char ch) {
   }
 
   if (current_char == ch) {
-    decrement_score(ch);
-  } else {
     increment_score(ch);
     increment_score(current_char);
+  } else {
+    decrement_score(ch);
   }
 
   char tmp = current_char;
