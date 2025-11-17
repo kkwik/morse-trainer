@@ -1,5 +1,6 @@
 #include "morse_trainer.h"
 #include "morse_player.h"
+#include "morse_table.h"
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -26,19 +27,9 @@ char sanitize_key_input(char ch_in) {
   return 0; // Catch fallthrough
 }
 
-void decrement_score(char ch) {
-  int c_score = table->get_score(ch);
-  if (c_score > 1) {
-    table->set_score(ch, --c_score);
-  }
-}
+void mark_right(char ch) { table->inc_score(ch); }
 
-void increment_score(char ch) {
-  int c_score = table->get_score(ch);
-  if (c_score > MAX_SCORE) {
-    table->set_score(ch, ++c_score);
-  }
-}
+void mark_wrong(char ch) { table->dec_score(ch); }
 
 void trainer_start(const struct morse_table *t) {
   table = t;
@@ -53,25 +44,19 @@ void trainer_stop() {
 }
 
 void trainer_next() {
-  // Runs two passes through the morse table to calculate the total score and
-  // then make a choice bounded by that total. Definitely more efficient ways to
-  // do this
-  // TODO: Could add an int to the table and track total_score through that.
-  // Would require synchronization anytime score is updated
-
   current_char = 'F';
-  int total_score = 0;
-  for (int i = 0; i < MORSE_TABLE_BUFFER_SIZE; i++) {
-    if (table->contains(i)) {
-      total_score += table->get_score(i);
-    }
-  }
 
-  int choice = rand() % total_score;
+  // Inaccuracy = MAX_SCORE - score, the distance from perfect
+  // This contortionism came about because initially lower scores were better
+  // but I thought for displaying a higher score being better would be more
+  // self-explanatory
+  int max_total_score = MAX_SCORE * table->get_entry_count();
+  int total_inaccuracy = max_total_score - table->get_total_score();
+  int choice = rand() % total_inaccuracy;
   for (int i = 0; i < MORSE_TABLE_BUFFER_SIZE; i++) {
     if (table->contains(i)) {
-      choice -= table->get_score(i);
-      if (choice < 0) {
+      choice -= (MAX_SCORE - table->get_score(i));
+      if (choice <= 0) {
         current_char = (char)i;
         return;
       }
@@ -110,10 +95,10 @@ char trainer_guess(char ch) {
   }
 
   if (current_char == ch) {
-    increment_score(ch);
-    increment_score(current_char);
+    mark_right(ch);
   } else {
-    decrement_score(ch);
+    mark_wrong(ch);
+    mark_wrong(current_char);
   }
 
   char tmp = current_char;

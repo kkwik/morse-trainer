@@ -13,9 +13,11 @@
 struct morse_table {
   int (*get_entry_count)();
   size_t (*get_max_sequence_length)();
+  int (*get_total_score)();
   bool (*contains)(int);
   int (*get_score)(int);
-  void (*set_score)(int, int);
+  void (*inc_score)(int);
+  void (*dec_score)(int);
   const char *(*get_sequence)(int);
 };
 

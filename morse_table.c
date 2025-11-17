@@ -12,6 +12,7 @@ static struct morse_table *table = NULL;
 static struct morse_entry **entries = NULL;
 static int entry_count = 0;
 static size_t max_sequence_length = 0;
+static int total_score = 0;
 
 struct morse_entry *init_entry(char *seq) {
   struct morse_entry *entry = malloc(sizeof(struct morse_entry));
@@ -28,6 +29,7 @@ void uninit_entry(struct morse_entry *entry) {
 
 int get_entry_count() { return entry_count; }
 size_t get_max_sequence_length() { return max_sequence_length; }
+int get_total_score() { return total_score; }
 bool contains(int sym) {
   return sym > 0 && sym < MORSE_TABLE_BUFFER_SIZE && entries[sym] != NULL;
 }
@@ -37,9 +39,20 @@ int get_score(int sym) {
   }
   return -1; // TODO: This is not a great failure indicator
 }
-void set_score(int sym, int new_score) {
+void inc_score(int sym) {
   if (contains(sym)) {
-    entries[sym]->score = new_score;
+    if (entries[sym]->score < MAX_SCORE) {
+      entries[sym]->score++;
+      total_score++;
+    }
+  }
+}
+void dec_score(int sym) {
+  if (contains(sym)) {
+    if (entries[sym]->score > 0) {
+      entries[sym]->score--;
+      total_score--;
+    }
   }
 }
 const char *get_sequence(int sym) {
@@ -114,6 +127,11 @@ struct morse_table *init_morse_table() {
     if (entries[i]) {
       entry_count++;
 
+      // Yes we could just do entry_count * DEFAULT_SCORE
+      // but for testing setting manual values was useful
+      // and that approach doesn't work in that scenario
+      total_score += entries[i]->score;
+
       size_t entry_length = strlen(entries[i]->sequence);
       if (entry_length > max_sequence_length) {
         max_sequence_length = entry_length;
@@ -127,9 +145,11 @@ struct morse_table *init_morse_table() {
   }
   table->get_entry_count = get_entry_count;
   table->get_max_sequence_length = get_max_sequence_length;
+  table->get_total_score = get_total_score;
   table->contains = contains;
   table->get_score = get_score;
-  table->set_score = set_score;
+  table->inc_score = inc_score;
+  table->dec_score = dec_score;
   table->get_sequence = get_sequence;
 
   return table;
