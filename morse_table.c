@@ -164,4 +164,5 @@ void uninit_morse_table() {
   }
 
   free(entries);
+  free(table);
 }
