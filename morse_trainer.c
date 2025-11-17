@@ -12,6 +12,7 @@ char current_char;
 
 char sanitize_key_input(char ch_in) {
 #pragma GCC diagnostic warning "-Wtype-limits"
+  // NOLINTNEXTLINE
   if (ch_in < 0 || ch_in >= MORSE_TABLE_BUFFER_SIZE) {
     return 0; // This check might be useless, gcc seems to think so
   }
