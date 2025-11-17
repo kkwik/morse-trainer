@@ -16,6 +16,8 @@ static struct guess_history history;
 
 // NCURSES Windows
 WINDOW *history_w;
+int history_min_width = 0;
+char *history_msg_template = "Played %c [%s], you answered %c [%s]";
 WINDOW *main_w;
 WINDOW *stats_w;
 
@@ -28,6 +30,31 @@ char *progress_indicator[9] = {" ",
                                "\xE2\x96\x8A",
                                "\xE2\x96\x89",
                                "\xE2\x96\x88"};
+
+void compute_history_min_width() {
+  history_min_width = 0;
+  bool on_percent = false;
+
+  for (size_t i = 0; i < strlen(history_msg_template); i++) {
+    if (history_msg_template[i] == '%') {
+      on_percent = true;
+      history_min_width++;
+    } else if (on_percent) {
+      switch (history_msg_template[i]) {
+      case 'c':
+        break; // %c resolves to 1 char and we've already counted the %
+      case 's':
+        history_min_width += get_table_max_code_length() - 1;
+        break;
+      default:
+        history_min_width++; // Not a % case we handle, assume literal %
+        break;
+      }
+    } else {
+      history_min_width++; // Normal char
+    }
+  }
+}
 
 void ui_setup() {
   setlocale(LC_ALL, "");
@@ -44,6 +71,11 @@ void ui_draw_history() {
   int border_margin = 1;
   width -= 2 * border_margin;
   height -= 2 * border_margin;
+
+  if (width < history_min_width) {
+    wrefresh(history_w);
+    return;
+  }
 
   for (int i = 0; i < history.capacity; i++) {
     if (height - i <= 0) {
@@ -180,6 +212,7 @@ int main() {
     return -1;
   }
 
+  compute_history_min_width();
   history = *init_history(&history, 100);
 
   ui_setup();
