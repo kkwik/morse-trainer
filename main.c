@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static const struct morse_entry **morse_table;
+static const struct morse_table *table;
 static struct guess_history history;
 
 // NCURSES Windows
@@ -44,7 +44,7 @@ void compute_history_min_width() {
       case 'c':
         break; // %c resolves to 1 char and we've already counted the %
       case 's':
-        history_min_width += get_table_max_code_length() - 1;
+        history_min_width += table->get_max_sequence_length() - 1;
         break;
       default:
         history_min_width++; // Not a % case we handle, assume literal %
@@ -87,8 +87,8 @@ void ui_draw_history() {
     if (history_get_entry(&entry, &history, i)) {
       mvwprintw(history_w, height - i, border_margin,
                 "Played %c [%s], you answered %c [%s]", entry.answer,
-                morse_table[(int)entry.answer]->code, entry.guess,
-                morse_table[(int)entry.guess]->code);
+                table->get_sequence(entry.answer), entry.guess,
+                table->get_sequence(entry.guess));
 
       // Clear out any characters from the end of this line to the border
       // Avoids a full wrefresh
@@ -118,13 +118,13 @@ void ui_draw_stats() {
   int code_count = 0; // Since code locations are not contiguous we need to
                       // track which code we are on separately from i
   for (int i = 0; i < MORSE_TABLE_BUFFER_SIZE; i++) {
-    if (!morse_table[i]) {
+    if (!(table->contains(i))) {
       continue;
     }
 
     mvwprintw(stats_w, border_margin + code_count, border_margin, "%c ",
               (char)i);
-    int entry_score = morse_table[i]->score;
+    int entry_score = table->get_score(i);
     int complete_blocks = entry_score / 9;
     int in_progress_block = entry_score % 9;
 
@@ -204,13 +204,12 @@ void exit_program(int sig) {
 int main() {
   signal(SIGINT, exit_program);
 
-  trainer_start();
-  const struct morse_entry *buffer[MORSE_TABLE_BUFFER_SIZE] = {NULL};
-  morse_table = trainer_get_table(buffer, MORSE_TABLE_BUFFER_SIZE);
-  if (morse_table == NULL) {
+  table = init_morse_table();
+  if (table == NULL) {
     printf("Could not allocate morse table");
     return -1;
   }
+  trainer_start(table);
 
   compute_history_min_width();
   history = *init_history(&history, 100);

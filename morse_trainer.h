@@ -1,11 +1,10 @@
 #ifndef MORSE_TRAINER_H
 #define MORSE_TRAINER_H
 #include <stdbool.h>
+#include "morse_table.h"
 
 char sanitize_key_input(char in);
-const struct morse_entry **trainer_get_table(const struct morse_entry **buffer,
-                                             int buffer_size);
-void trainer_start();
+void trainer_start(const struct morse_table *);
 void trainer_next();
 void trainer_play();
 char trainer_guess(char ch);

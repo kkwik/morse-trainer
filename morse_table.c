@@ -3,112 +3,145 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Assigned in the process of init'ing
-static int table_entry_count = 0;
-static size_t table_max_code_length = 0;
-static struct morse_entry **morse_table = NULL;
+struct morse_entry {
+  const char *sequence;
+  int score;
+};
+
+static struct morse_table *table = NULL;
+static struct morse_entry **entries = NULL;
+static int entry_count = 0;
+static size_t max_sequence_length = 0;
 
 struct morse_entry *init_entry(char *seq) {
-  // Compute and set maximum code length
-  size_t seq_len = strlen(seq);
-  if (seq_len > table_max_code_length) {
-    table_max_code_length = seq_len;
-  }
-
   struct morse_entry *entry = malloc(sizeof(struct morse_entry));
-  entry->code = malloc(strlen(seq) * sizeof(char));
-  strcpy((char *)entry->code, seq);
+  entry->sequence = malloc(strlen(seq) * sizeof(char));
+  strcpy((char *)entry->sequence, seq);
   entry->score = DEFAULT_SCORE;
   return entry;
 }
 
 void uninit_entry(struct morse_entry *entry) {
-  free((char *)(entry->code));
+  free((char *)(entry->sequence));
   free(entry);
 }
 
-// An associative array for morse symbols, horrendously done
-// Indexing into morse can be done with the character of interest
-// The size of the array is of course idiotically oversized
-struct morse_entry **init_morse_table() {
-  if (morse_table != NULL) {
-    return morse_table;
+int get_entry_count() { return entry_count; }
+size_t get_max_sequence_length() { return max_sequence_length; }
+bool contains(int sym) {
+  return sym > 0 && sym < MORSE_TABLE_BUFFER_SIZE && entries[sym] != NULL;
+}
+int get_score(int sym) {
+  if (contains(sym)) {
+    return entries[sym]->score;
+  }
+  return -1; // TODO: This is not a great failure indicator
+}
+void set_score(int sym, int new_score) {
+  if (contains(sym)) {
+    entries[sym]->score = new_score;
+  }
+}
+const char *get_sequence(int sym) {
+  if (contains(sym)) {
+    return entries[sym]->sequence;
+  }
+  return NULL;
+}
+
+struct morse_table *init_morse_table() {
+  if (table != NULL) {
+    return table;
   }
 
-  morse_table = calloc(MORSE_TABLE_BUFFER_SIZE, sizeof(struct morse_entry *));
-
-  morse_table['!'] = init_entry("-.-.--");
-  morse_table['"'] = init_entry(".-..-.");
-  morse_table['&'] = init_entry(".-...");
-  morse_table['\''] = init_entry(".----.");
-  morse_table['('] = init_entry("-.--.");
-  morse_table[')'] = init_entry("-.--.-");
-  morse_table['+'] = init_entry(".-.-.");
-  morse_table[','] = init_entry("--..--");
-  morse_table['-'] = init_entry("-....-");
-  morse_table['.'] = init_entry(".-.-.-");
-  morse_table['/'] = init_entry("-..-.");
-  morse_table['0'] = init_entry("-----");
-  morse_table['1'] = init_entry(".----");
-  morse_table['2'] = init_entry("..---");
-  morse_table['3'] = init_entry("...--");
-  morse_table['4'] = init_entry("....-");
-  morse_table['5'] = init_entry(".....");
-  morse_table['6'] = init_entry("-....");
-  morse_table['7'] = init_entry("--...");
-  morse_table['8'] = init_entry("---..");
-  morse_table['9'] = init_entry("----.");
-  morse_table[':'] = init_entry("---...");
-  morse_table['='] = init_entry("-...-");
-  morse_table['?'] = init_entry("..--..");
-  morse_table['@'] = init_entry(".--.-.");
-  morse_table['A'] = init_entry(".-");
-  morse_table['B'] = init_entry("-...");
-  morse_table['C'] = init_entry("-.-.");
-  morse_table['D'] = init_entry("-..");
-  morse_table['E'] = init_entry(".");
-  morse_table['F'] = init_entry("..-.");
-  morse_table['G'] = init_entry("--.");
-  morse_table['H'] = init_entry("....");
-  morse_table['I'] = init_entry("..");
-  morse_table['J'] = init_entry(".---");
-  morse_table['K'] = init_entry("-.-");
-  morse_table['L'] = init_entry(".-..");
-  morse_table['M'] = init_entry("--");
-  morse_table['N'] = init_entry("-.");
-  morse_table['O'] = init_entry("---");
-  morse_table['P'] = init_entry(".--.");
-  morse_table['Q'] = init_entry("--.-");
-  morse_table['R'] = init_entry(".-.");
-  morse_table['S'] = init_entry("...");
-  morse_table['T'] = init_entry("-");
-  morse_table['U'] = init_entry("..-");
-  morse_table['V'] = init_entry("...-");
-  morse_table['W'] = init_entry(".--");
-  morse_table['X'] = init_entry("-..-");
-  morse_table['Y'] = init_entry("-.--");
-  morse_table['Z'] = init_entry("--..");
+  // An associative array for morse symbols, horrendously done
+  // Indexing into morse can be done with the character of interest
+  // The size of the array is of course idiotically oversized
+  entries = calloc(MORSE_TABLE_BUFFER_SIZE, sizeof(struct morse_entry *));
+  entries['!'] = init_entry("-.-.--");
+  entries['"'] = init_entry(".-..-.");
+  entries['&'] = init_entry(".-...");
+  entries['\''] = init_entry(".----.");
+  entries['('] = init_entry("-.--.");
+  entries[')'] = init_entry("-.--.-");
+  entries['+'] = init_entry(".-.-.");
+  entries[','] = init_entry("--..--");
+  entries['-'] = init_entry("-....-");
+  entries['.'] = init_entry(".-.-.-");
+  entries['/'] = init_entry("-..-.");
+  entries['0'] = init_entry("-----");
+  entries['1'] = init_entry(".----");
+  entries['2'] = init_entry("..---");
+  entries['3'] = init_entry("...--");
+  entries['4'] = init_entry("....-");
+  entries['5'] = init_entry(".....");
+  entries['6'] = init_entry("-....");
+  entries['7'] = init_entry("--...");
+  entries['8'] = init_entry("---..");
+  entries['9'] = init_entry("----.");
+  entries[':'] = init_entry("---...");
+  entries['='] = init_entry("-...-");
+  entries['?'] = init_entry("..--..");
+  entries['@'] = init_entry(".--.-.");
+  entries['A'] = init_entry(".-");
+  entries['B'] = init_entry("-...");
+  entries['C'] = init_entry("-.-.");
+  entries['D'] = init_entry("-..");
+  entries['E'] = init_entry(".");
+  entries['F'] = init_entry("..-.");
+  entries['G'] = init_entry("--.");
+  entries['H'] = init_entry("....");
+  entries['I'] = init_entry("..");
+  entries['J'] = init_entry(".---");
+  entries['K'] = init_entry("-.-");
+  entries['L'] = init_entry(".-..");
+  entries['M'] = init_entry("--");
+  entries['N'] = init_entry("-.");
+  entries['O'] = init_entry("---");
+  entries['P'] = init_entry(".--.");
+  entries['Q'] = init_entry("--.-");
+  entries['R'] = init_entry(".-.");
+  entries['S'] = init_entry("...");
+  entries['T'] = init_entry("-");
+  entries['U'] = init_entry("..-");
+  entries['V'] = init_entry("...-");
+  entries['W'] = init_entry(".--");
+  entries['X'] = init_entry("-..-");
+  entries['Y'] = init_entry("-.--");
+  entries['Z'] = init_entry("--..");
 
   for (int i = 0; i < MORSE_TABLE_BUFFER_SIZE; i++) {
-    if (morse_table[i]) {
-      table_entry_count++;
+    if (entries[i]) {
+      entry_count++;
+
+      size_t entry_length = strlen(entries[i]->sequence);
+      if (entry_length > max_sequence_length) {
+        max_sequence_length = entry_length;
+      }
     }
   }
-  return morse_table;
+
+  table = malloc(sizeof(struct morse_table));
+  if (table == NULL) {
+    return NULL;
+  }
+  table->get_entry_count = get_entry_count;
+  table->get_max_sequence_length = get_max_sequence_length;
+  table->contains = contains;
+  table->get_score = get_score;
+  table->set_score = set_score;
+  table->get_sequence = get_sequence;
+
+  return table;
 }
 
 void uninit_morse_table() {
-	// Free structs first
-	for (int i = 0; i < MORSE_TABLE_BUFFER_SIZE; i++) {
-		if (morse_table[i]) {
-			uninit_entry(morse_table[i]);
-		}
-	}
+  // Free structs first
+  for (int i = 0; i < MORSE_TABLE_BUFFER_SIZE; i++) {
+    if (entries[i]) {
+      uninit_entry(entries[i]);
+    }
+  }
 
-	free(morse_table);
+  free(entries);
 }
-
-int get_table_entry_count() { return table_entry_count; }
-
-size_t get_table_max_code_length() { return table_max_code_length; }
-

@@ -1,13 +1,12 @@
 #include "morse_trainer.h"
 #include "morse_player.h"
-#include "morse_table.h"
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 #include <threads.h>
 #include <time.h>
 
-static struct morse_entry **morse_table;
+static const struct morse_table *table;
 char current_char;
 
 char sanitize_key_input(char ch_in) {
@@ -20,7 +19,7 @@ char sanitize_key_input(char ch_in) {
     return ch_in - 32; // Capitalize
   }
 
-  if (morse_table[(int)ch_in]) {
+  if (table->contains(ch_in)) {
     return ch_in;
   }
 
@@ -28,36 +27,24 @@ char sanitize_key_input(char ch_in) {
 }
 
 void decrement_score(char ch) {
-  if (morse_table[(int)ch]->score > 1) {
-    morse_table[(int)ch]->score--;
+  int c_score = table->get_score(ch);
+  if (c_score > 1) {
+    table->set_score(ch, --c_score);
   }
 }
 
 void increment_score(char ch) {
-  if (morse_table[(int)ch]->score < MAX_SCORE) {
-    morse_table[(int)ch]->score++;
+  int c_score = table->get_score(ch);
+  if (c_score > MAX_SCORE) {
+    table->set_score(ch, ++c_score);
   }
 }
 
-const struct morse_entry **trainer_get_table(const struct morse_entry **buffer,
-                                             int buffer_size) {
-  if (buffer_size < MORSE_TABLE_BUFFER_SIZE) {
-    return NULL;
-  }
-
-  for (int i = 0; i < buffer_size; i++) {
-    if (morse_table[i]) {
-      buffer[i] = morse_table[i];
-    }
-  }
-  return (const struct morse_entry **)buffer;
-}
-
-void trainer_start() {
+void trainer_start(const struct morse_table *t) {
+  table = t;
   srand(time(NULL) + 1);
-  morse_table = init_morse_table();
 
-  player_setup(get_table_max_code_length());
+  player_setup(table->get_max_sequence_length());
 }
 
 void trainer_stop() {
@@ -75,15 +62,15 @@ void trainer_next() {
   current_char = 'F';
   int total_score = 0;
   for (int i = 0; i < MORSE_TABLE_BUFFER_SIZE; i++) {
-    if (morse_table[i]) {
-      total_score += morse_table[i]->score;
+    if (table->contains(i)) {
+      total_score += table->get_score(i);
     }
   }
 
   int choice = rand() % total_score;
   for (int i = 0; i < MORSE_TABLE_BUFFER_SIZE; i++) {
-    if (morse_table[i]) {
-      choice -= morse_table[i]->score;
+    if (table->contains(i)) {
+      choice -= table->get_score(i);
       if (choice < 0) {
         current_char = (char)i;
         return;
@@ -101,7 +88,7 @@ void trainer_next() {
 // whole sequence is not possible) but really it would be nice for the next
 // request to play to cancel the current one
 void trainer_play() {
-  const char *table_seq = morse_table[(int)current_char]->code;
+  const char *table_seq = table->get_sequence(current_char);
   char *seq = malloc(strlen(table_seq) * sizeof(char));
   strcpy(seq, table_seq);
 
