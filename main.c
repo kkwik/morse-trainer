@@ -10,13 +10,14 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#define UNSET_INT -1
 
 static const struct morse_table *table;
 static struct guess_history history;
 
 // NCURSES Windows
 WINDOW *history_w;
-int history_min_width = 0;
+int history_min_width = UNSET_INT;
 char *history_msg_template = "Played %c [%s], you answered %c [%s]";
 WINDOW *main_w;
 WINDOW *stats_w;
@@ -66,6 +67,9 @@ void ui_setup() {
 }
 
 void ui_draw_history() {
+  if (history_min_width == UNSET_INT) {
+    compute_history_min_width();
+  }
   int width, height;
   getmaxyx(history_w, height, width);
   int border_margin = 1;
@@ -211,7 +215,6 @@ int main() {
   }
   trainer_start(table);
 
-  compute_history_min_width();
   history = *init_history(&history, 100);
 
   ui_setup();
