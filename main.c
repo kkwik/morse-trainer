@@ -163,7 +163,7 @@ void ui_redraw_all_windows() {
   // Create Windows
   history_w =     newwin(avail_rows, sub_col_width, 0 + border_margin, border_margin + (0 * sub_col_width));
   main_w =        newwin(avail_rows, sub_col_width, 0 + border_margin, border_margin + (1 * sub_col_width));
-  stats_w = newwin(avail_rows, sub_col_width, 0 + border_margin, border_margin + (2 * sub_col_width));
+  stats_w =       newwin(avail_rows, sub_col_width, 0 + border_margin, border_margin + (2 * sub_col_width));
 
   // Draw Borders
   wborder(history_w,     0, 0, 0, 0, 0, 0, 0, 0);
