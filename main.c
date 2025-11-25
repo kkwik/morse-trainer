@@ -11,8 +11,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-static const struct morse_table *table = NULL;
-static struct guess_history *history = NULL;
+static const struct morse_table *table_data = NULL;
+static struct guess_history *history_data = NULL;
 
 void exit_program(int sig) {
   (void)sig;
@@ -26,20 +26,20 @@ void exit_program(int sig) {
 bool setup_program() {
   signal(SIGINT, exit_program);
 
-  table = init_morse_table();
-  if (table == NULL) {
+  table_data = init_morse_table();
+  if (table_data == NULL) {
     printf("Could not allocate morse table");
     return false;
   }
-  trainer_start(table);
+  trainer_start(table_data);
 
-  history = init_history(history, 100);
-  if (history == NULL) {
+  history_data = init_history(history_data, 100);
+  if (history_data == NULL) {
     printf("Could not allocate guess history");
     return false;
   }
 
-  ui_setup(table, history);
+  ui_setup(table_data, history_data);
 
   return true;
 }
@@ -70,7 +70,7 @@ int main() {
     } while (guess == 0);
 
     char answer = trainer_guess(guess);
-    history_add(history, guess, answer);
+    history_add(history_data, guess, answer);
 
     ui_draw_history();
     ui_draw_stats();
