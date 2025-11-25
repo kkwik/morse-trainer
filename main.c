@@ -1,6 +1,6 @@
-#include "guess_history.h"
-#include "morse_table.h"
-#include "morse_trainer.h"
+#include "morse/guess_history.h"
+#include "morse/morse_table.h"
+#include "morse/trainer.h"
 #include "ui/ui_manager.h"
 #include <assert.h>
 #include <ncurses.h>

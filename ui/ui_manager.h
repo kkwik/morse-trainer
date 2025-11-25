@@ -1,8 +1,8 @@
 #ifndef UI_MANAGER_H
 #define UI_MANAGER_H
 #define UNSET_INT -1
-#include "../guess_history.h"
-#include "../morse_table.h"
+#include "../morse/guess_history.h"
+#include "../morse/morse_table.h"
 #include <stdbool.h>
 
 // The purpose of this class? will be to orchestrate what windows we have

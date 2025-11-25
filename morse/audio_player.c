@@ -1,5 +1,5 @@
-#include "morse_player.h"
-#include "miniaudio/miniaudio.h"
+#include "audio_player.h"
+#include "../miniaudio/miniaudio.h"
 #include <stdatomic.h>
 #include <stddef.h>
 #include <stdio.h>

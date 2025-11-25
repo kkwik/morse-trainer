@@ -1,5 +1,5 @@
-#include "morse_trainer.h"
-#include "morse_player.h"
+#include "trainer.h"
+#include "audio_player.h"
 #include "morse_table.h"
 #include <stdatomic.h>
 #include <stddef.h>
