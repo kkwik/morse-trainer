@@ -1,6 +1,7 @@
 #include "morse_trainer.h"
 #include "morse_player.h"
 #include "morse_table.h"
+#include <stdatomic.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,6 +10,8 @@
 
 static const struct morse_table *table;
 char current_char;
+atomic_bool continue_playing_audio = false;
+mtx_t audio_subthread_mtx;
 
 char sanitize_key_input(char ch_in) {
 #pragma GCC diagnostic warning "-Wtype-limits"
@@ -33,6 +36,7 @@ void mark_right(char ch) { table->inc_score(ch); }
 void mark_wrong(char ch) { table->dec_score(ch); }
 
 void trainer_start(const struct morse_table *t) {
+  mtx_init(&audio_subthread_mtx, mtx_plain);
   table = t;
   srand(time(NULL) + 1);
 
@@ -42,6 +46,7 @@ void trainer_start(const struct morse_table *t) {
 void trainer_stop() {
   uninit_morse_table();
   player_teardown();
+  mtx_destroy(&audio_subthread_mtx);
 }
 
 void trainer_next() {
@@ -84,9 +89,17 @@ void trainer_play() {
   config->wpm = 25;
   config->code = seq;
 
+  // Signal any previous thread to stop playing audio
+  // Existing thread will cleanup and then release the mutex allowing the new
+  // thread to begin
   thrd_t thread;
+  continue_playing_audio = false;
+
+  mtx_lock(&audio_subthread_mtx);
+  continue_playing_audio = true;
   thrd_create(&thread, thread_play_morse_char, config);
   thrd_detach(thread);
+  mtx_unlock(&audio_subthread_mtx);
 }
 
 char trainer_guess(char ch) {

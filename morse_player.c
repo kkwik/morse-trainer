@@ -1,5 +1,6 @@
 #include "morse_player.h"
 #include "miniaudio/miniaudio.h"
+#include <stdatomic.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,11 +13,17 @@
 
 static ma_waveform *g_symbolDataSources;
 static size_t *g_symbolDataSources_length;
-mtx_t mutex;
 ma_event g_stopEvent;
+extern mtx_t audio_subthread_mtx;
+extern atomic_bool continue_playing_audio;
 
 void data_callback(ma_device *pDevice, void *pOutput, const void *pInput,
                    ma_uint32 frameCount) {
+  // Main thread has indicated we should stop early
+  if (!continue_playing_audio) {
+    ma_event_signal(&g_stopEvent);
+  }
+
   ma_decoder *pDecoder = (ma_decoder *)pDevice->pUserData;
   if (pDecoder == NULL) {
     return;
@@ -32,8 +39,6 @@ void data_callback(ma_device *pDevice, void *pOutput, const void *pInput,
 }
 
 bool player_setup(size_t max_code_length) {
-  mtx_init(&mutex, mtx_plain);
-
   // Allocate enough space for the maximum code length
   g_symbolDataSources_length = malloc(sizeof(g_symbolDataSources_length));
   *g_symbolDataSources_length = 2 * max_code_length;
@@ -104,7 +109,7 @@ void play_morse_char(struct player_config *config) {
 }
 
 int thread_play_morse_char(void *arg) {
-  mtx_lock(&mutex);
+  mtx_lock(&audio_subthread_mtx);
   struct player_config *config = (struct player_config *)arg;
   play_morse_char(config);
 
@@ -112,16 +117,13 @@ int thread_play_morse_char(void *arg) {
   free(config->code);
   free(config);
 
-  mtx_unlock(&mutex);
-
+  mtx_unlock(&audio_subthread_mtx);
   return 0;
 }
 
 bool player_teardown() {
   free(g_symbolDataSources);
   free(g_symbolDataSources_length);
-
-  mtx_destroy(&mutex);
 
   return true;
 }
