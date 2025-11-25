@@ -1,2 +1,2 @@
 rm main 2> /dev/null # Ignore error message
-gcc -g -o main *.c -Wall -Wextra -Werror -Wpedantic -lpthread -lm -lncursesw
+gcc -g -o main *.c ./ui/*.c -Wall -Wextra -Werror -Wpedantic -lpthread -lm -lncursesw

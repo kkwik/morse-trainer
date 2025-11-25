@@ -8,6 +8,7 @@ struct guess_history *init_history(struct guess_history *history,
                                    int capacity) {
   // Size and capacity are guess based
   // Latest is based on actual lengths
+  history = calloc(1, sizeof(struct guess_history));
   history->buffer = calloc(2 * capacity, sizeof(char));
   history->capacity = capacity;
   history->size = 0;
@@ -16,7 +17,10 @@ struct guess_history *init_history(struct guess_history *history,
   return history;
 }
 
-void uninit_history(struct guess_history *history) { free(history->buffer); }
+void uninit_history(struct guess_history *history) {
+  free(history->buffer);
+  free(history);
+}
 
 void history_add(struct guess_history *history, char guess, char answer) {
   // TODO: checking size != 0 feels a bit hacky
