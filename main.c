@@ -48,7 +48,7 @@ int main() {
   if (setup_program() != true) {
     return -1;
   }
-  ui_redraw_all_windows();
+  ui_redraw_windows();
 
   // General loop
   while (true) {
@@ -64,7 +64,7 @@ int main() {
       // Handle special cases/input
       switch (ch) {
       case KEY_RESIZE:
-        ui_redraw_all_windows();
+        ui_redraw_windows();
         continue;
       }
     } while (guess == 0);
@@ -72,8 +72,7 @@ int main() {
     char answer = trainer_guess(guess);
     history_add(history_data, guess, answer);
 
-    ui_draw_history();
-    ui_draw_stats();
+    ui_update_content();
   }
 
   exit_program(0); // Just here incase I change the logic later
