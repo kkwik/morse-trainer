@@ -1,6 +1,7 @@
 #include "morse_player.h"
-#include "miniaudio/miniaudio.c"
+#include "miniaudio/miniaudio.h"
 #include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <threads.h>
