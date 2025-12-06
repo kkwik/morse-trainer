@@ -1,6 +1,7 @@
 #include "ui_history.h"
 #include <ncurses.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 static const struct morse_table *table = NULL;
@@ -66,34 +67,46 @@ void ui_history_update_content() {
   height -= 2 * border_margin;
 
   if (width < history_min_width) {
+    // Not enough width to draw history, draw something else
+    for (int r = border_margin; r <= height; r++) {
+      for (int c = border_margin; c <= width; c++) {
+        int i = (r * width) + c;
+        char *s[3] = {"\\", "|", "/"};
+
+        mvwprintw(history_w, r, c, "%s", s[i % 3]);
+      }
+    }
     wrefresh(history_w);
     return;
-  }
+  } else {
+    int surplus_width = width - history_min_width;
+    int left_pad = surplus_width / 2;
 
-  for (int i = 0; i < history->capacity; i++) {
-    if (height - i <= 0) {
-      // We've reached the top of the window, cannot draw more
-      break;
-    }
+    for (int i = 0; i < history->capacity; i++) {
+      if (height - i <= 0) {
+        break; // Top of window reached, cannot draw more
+      }
 
-    struct guess_entry entry;
-    if (history_get_entry(&entry, history, i)) {
-      mvwprintw(history_w, height - i, border_margin,
-                "Played %c [%s], you answered %c [%s]", entry.answer,
-                table->get_sequence(entry.answer), entry.guess,
-                table->get_sequence(entry.guess));
+      struct guess_entry entry;
+      if (history_get_entry(&entry, history, i)) {
+        mvwprintw(history_w, height - i, border_margin + left_pad,
+                  "Played %c [%s], you answered %c [%s]", entry.answer,
+                  table->get_sequence(entry.answer), entry.guess,
+                  table->get_sequence(entry.guess));
 
-      // Clear out any characters from the end of this line to the border
-      // Avoids a full wrefresh
-      int curs_y, curs_x;
-      getyx(history_w, curs_y, curs_x);
-      (void)curs_y;
-      int line_remaining = width - curs_x;
-      for (int l = 0; l <= line_remaining; l++) {
-        wprintw(history_w, " ");
+        // Clear out any characters from the end of this line to the border
+        // Avoids a full wrefresh
+        int curs_y, curs_x;
+        getyx(history_w, curs_y, curs_x);
+        (void)curs_y;
+        int line_remaining = width - curs_x;
+        for (int l = 0; l <= line_remaining; l++) {
+          wprintw(history_w, " ");
+        }
       }
     }
   }
+
   wrefresh(history_w);
 }
 
