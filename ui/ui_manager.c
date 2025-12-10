@@ -9,7 +9,8 @@
 static const struct morse_table *table = NULL;
 static struct guess_history *history = NULL;
 
-bool ui_setup(const struct morse_table *t, struct guess_history *h) {
+bool ui_setup(const struct morse_table *t, struct guess_history *h,
+              struct trainer_config *c) {
   table = t;
   history = h;
 
@@ -21,7 +22,7 @@ bool ui_setup(const struct morse_table *t, struct guess_history *h) {
   curs_set(1);
 
   init_ui_history(t, h);
-  init_ui_controls();
+  init_ui_controls(c);
   init_ui_stats(t);
 
   return true;

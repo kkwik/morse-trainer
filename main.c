@@ -1,6 +1,7 @@
 #include "morse/guess_history.h"
 #include "morse/morse_table.h"
 #include "morse/trainer.h"
+#include "morse/trainer_config.h"
 #include "ui/ui_manager.h"
 #include <assert.h>
 #include <ncurses.h>
@@ -13,7 +14,9 @@
 
 static const struct morse_table *table_data = NULL;
 static struct guess_history *history_data = NULL;
+static struct trainer_config *config = NULL;
 
+// TODO: free the allocated stuff above
 void exit_program(int sig) {
   (void)sig;
   trainer_stop();
@@ -39,7 +42,13 @@ bool setup_program() {
     return false;
   }
 
-  ui_setup(table_data, history_data);
+  config = init_trainer_config(config);
+  if (config == NULL) {
+    printf("Could not allocate configuration");
+    return false;
+  }
+
+  ui_setup(table_data, history_data, config);
 
   return true;
 }
