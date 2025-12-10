@@ -10,9 +10,9 @@
 static const struct morse_table *table = NULL;
 static struct guess_history *history = NULL;
 
-// Bounds for each window, in order HISTORY, CONTROLS, STATS
-// Order here has no bearing on layout
-static struct bounds window_bounds[3] = {{}, {}, {}};
+static struct bounds history_bounds = {};
+static struct bounds controls_bounds = {};
+static struct bounds stats_bounds = {};
 
 bool ui_setup(const struct morse_table *t, struct guess_history *h,
               struct trainer_config *c) {
@@ -38,11 +38,11 @@ void ui_handle_mouse_input(MEVENT *event) {
   (void)event;
 
   // Figure out which window the click was in
-  if (inside_bounds(window_bounds[0], event->x, event->y)) {
+  if (inside_bounds(history_bounds, event->x, event->y)) {
     ui_history_handle_mouse_input(event);
-  } else if (inside_bounds(window_bounds[1], event->x, event->y)) {
+  } else if (inside_bounds(controls_bounds, event->x, event->y)) {
     ui_controls_handle_mouse_input(event);
-  } else if (inside_bounds(window_bounds[2], event->x, event->y)) {
+  } else if (inside_bounds(stats_bounds, event->x, event->y)) {
     ui_stats_handle_mouse_input(event);
   }
 }
@@ -62,26 +62,26 @@ void ui_redraw_windows() {
   // History window bounds
   int histo_bx = border_margin + (0 * sub_col_width);
   int histo_by = border_margin;
-  int histo_mx = histo_bx + sub_col_width;
-  int histo_my = histo_by + avail_rows;
-  window_bounds[0] = (struct bounds){
-      .bx = histo_bx, .by = histo_by, .mx = histo_mx, .my = histo_my};
+  history_bounds = (struct bounds){.bx = histo_bx,
+                                   .by = histo_by,
+                                   .mx = histo_bx + sub_col_width,
+                                   .my = histo_by + avail_rows};
 
   // Controls window bounds
   int contr_bx = border_margin + (1 * sub_col_width);
   int contr_by = border_margin;
-  int contr_mx = contr_bx + sub_col_width;
-  int contr_my = contr_by + avail_rows;
-  window_bounds[1] = (struct bounds){
-      .bx = contr_bx, .by = contr_by, .mx = contr_mx, .my = contr_my};
+  controls_bounds = (struct bounds){.bx = contr_bx,
+                                    .by = contr_by,
+                                    .mx = contr_bx + sub_col_width,
+                                    .my = contr_by + avail_rows};
 
   // stats window bounds
   int stats_bx = border_margin + (2 * sub_col_width);
   int stats_by = border_margin;
-  int stats_mx = stats_bx + sub_col_width;
-  int stats_my = stats_by + avail_rows;
-  window_bounds[2] = (struct bounds){
-      .bx = stats_bx, .by = stats_by, .mx = stats_mx, .my = stats_my};
+  stats_bounds = (struct bounds){.bx = stats_bx,
+                                 .by = stats_by,
+                                 .mx = stats_bx + sub_col_width,
+                                 .my = stats_by + avail_rows};
 
   ui_history_redraw(newwin(avail_rows, sub_col_width, histo_by, histo_bx));
   ui_controls_redraw(newwin(avail_rows, sub_col_width, contr_by, contr_bx));
