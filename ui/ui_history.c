@@ -43,6 +43,11 @@ void init_ui_history(const struct morse_table *t, struct guess_history *h) {
   history_min_width = compute_history_min_width();
 }
 
+void ui_history_handle_mouse_input(MEVENT *event) {
+  (void)event;
+  return;
+}
+
 bool ui_history_redraw(WINDOW *newWin) {
   delwin(history_w);
   history_w = newWin;

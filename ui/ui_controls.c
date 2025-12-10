@@ -9,6 +9,11 @@ static struct trainer_config *config = NULL;
 // WPM, disable/enable groups of symbols i.e. letters, numbers, symbols
 void init_ui_controls(struct trainer_config *c) { config = c; }
 
+void ui_controls_handle_mouse_input(MEVENT *event) {
+  (void)event;
+  return;
+}
+
 bool ui_controls_redraw(WINDOW *newWin) {
   delwin(controls_w);
   controls_w = newWin;

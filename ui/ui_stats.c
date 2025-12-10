@@ -20,6 +20,11 @@ void init_ui_stats(const struct morse_table *t) {
   stats_min_width = 9; // TODO: Magic!!
 }
 
+void ui_stats_handle_mouse_input(MEVENT *event) {
+  (void)event;
+  return;
+}
+
 bool ui_stats_redraw(WINDOW *newWin) {
   delwin(stats_w);
   stats_w = newWin;

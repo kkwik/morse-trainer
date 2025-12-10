@@ -1,5 +1,5 @@
 #include "ui_manager.h"
-#include "bounds.h"
+#include "coords.h"
 #include "ui_controls.h"
 #include "ui_history.h"
 #include "ui_stats.h"
@@ -38,11 +38,12 @@ void ui_handle_mouse_input(MEVENT *event) {
   (void)event;
 
   // Figure out which window the click was in
-  if (inside_bounds(history_bounds, event->x, event->y)) {
+  struct point event_loc = (struct point){.x = event->x, .y = event->y};
+  if (inside_bounds(history_bounds, event_loc)) {
     ui_history_handle_mouse_input(event);
-  } else if (inside_bounds(controls_bounds, event->x, event->y)) {
+  } else if (inside_bounds(controls_bounds, event_loc)) {
     ui_controls_handle_mouse_input(event);
-  } else if (inside_bounds(stats_bounds, event->x, event->y)) {
+  } else if (inside_bounds(stats_bounds, event_loc)) {
     ui_stats_handle_mouse_input(event);
   }
 }
@@ -59,33 +60,32 @@ void ui_redraw_windows() {
   int border_margin = 1;
   int sub_col_width = avail_cols / 3;
 
+  /* clang-format off */
   // History window bounds
-  int histo_bx = border_margin + (0 * sub_col_width);
-  int histo_by = border_margin;
-  history_bounds = (struct bounds){.bx = histo_bx,
-                                   .by = histo_by,
-                                   .mx = histo_bx + sub_col_width,
-                                   .my = histo_by + avail_rows};
+  struct point histo_tl = (struct point){.x = border_margin + (0 * sub_col_width),
+	                                 .y = border_margin};
+  struct point histo_br = (struct point){.x = histo_tl.x + sub_col_width,
+                                         .y = histo_tl.y + avail_rows};
+  history_bounds = (struct bounds){.tl = histo_tl, .br = histo_br};
 
   // Controls window bounds
-  int contr_bx = border_margin + (1 * sub_col_width);
-  int contr_by = border_margin;
-  controls_bounds = (struct bounds){.bx = contr_bx,
-                                    .by = contr_by,
-                                    .mx = contr_bx + sub_col_width,
-                                    .my = contr_by + avail_rows};
+  struct point contr_tl = (struct point){.x = border_margin + (1 * sub_col_width),
+                                         .y = border_margin};
+  struct point contr_br = (struct point){.x = contr_tl.x + sub_col_width,
+                                         .y = contr_tl.y + avail_rows};
+  controls_bounds = (struct bounds){.tl = contr_tl, .br = contr_br};
 
-  // stats window bounds
-  int stats_bx = border_margin + (2 * sub_col_width);
-  int stats_by = border_margin;
-  stats_bounds = (struct bounds){.bx = stats_bx,
-                                 .by = stats_by,
-                                 .mx = stats_bx + sub_col_width,
-                                 .my = stats_by + avail_rows};
+  // Stats window bounds
+  struct point stats_tl = (struct point){.x = border_margin + (2 * sub_col_width),
+                                         .y = border_margin};
+  struct point stats_br = (struct point){.x = stats_tl.x + sub_col_width,
+                                         .y = stats_tl.y + avail_rows};
+  stats_bounds = (struct bounds){.tl = stats_tl, .br = stats_br};
+  /* clang-format off */
 
-  ui_history_redraw(newwin(avail_rows, sub_col_width, histo_by, histo_bx));
-  ui_controls_redraw(newwin(avail_rows, sub_col_width, contr_by, contr_bx));
-  ui_stats_redraw(newwin(avail_rows, sub_col_width, stats_by, contr_bx));
+  ui_history_redraw(newwin(avail_rows, sub_col_width, histo_tl.y, histo_tl.x));
+  ui_controls_redraw(newwin(avail_rows, sub_col_width, contr_tl.y, contr_tl.x));
+  ui_stats_redraw(newwin(avail_rows, sub_col_width, stats_tl.y, stats_tl.x));
 
   ui_history_update_content();
   ui_controls_update_content();
