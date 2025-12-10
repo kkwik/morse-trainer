@@ -1,5 +1,5 @@
-#ifndef MORSE_TRAINER_CONFIG
-#define MORSE_TRAINER_CONFIG
+#ifndef MORSE_TRAINER_CONFIG_H
+#define MORSE_TRAINER_CONFIG_H
 
 struct trainer_config {
   int wpm;
