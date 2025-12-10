@@ -6,6 +6,7 @@
 #include <ncurses.h>
 
 void init_ui_stats(const struct morse_table *t);
+void ui_stats_handle_mouse_input(MEVENT *event);
 bool ui_stats_redraw(WINDOW *newWin);
 void ui_stats_update_content();
 void ui_stats_teardown();
