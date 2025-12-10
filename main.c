@@ -76,7 +76,6 @@ int main() {
         ui_redraw_windows();
         continue;
       case KEY_MOUSE:
-        mvwprintw(stdscr, 0, 7, "LKJSDLFKSJDFLKJ");
         if (getmouse(&event) == OK) {
           ui_handle_mouse_input(&event);
         }
