@@ -68,14 +68,22 @@ int main() {
     char guess = 0;
     do {
       ch = getch();
-      guess = sanitize_key_input(ch);
 
       // Handle special cases/input
+      MEVENT event;
       switch (ch) {
       case KEY_RESIZE:
         ui_redraw_windows();
         continue;
+      case KEY_MOUSE:
+        mvwprintw(stdscr, 0, 7, "LKJSDLFKSJDFLKJ");
+        if (getmouse(&event) == OK) {
+          ui_handle_mouse_input(&event);
+        }
+        continue;
       }
+
+      guess = sanitize_key_input(ch);
     } while (guess == 0);
 
     char answer = trainer_guess(guess);

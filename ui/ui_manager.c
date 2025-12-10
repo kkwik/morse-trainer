@@ -19,13 +19,20 @@ bool ui_setup(const struct morse_table *t, struct guess_history *h,
   noecho();
   cbreak();
   keypad(stdscr, TRUE);
-  curs_set(1);
+  curs_set(0);
+  mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
 
   init_ui_history(t, h);
   init_ui_controls(c);
   init_ui_stats(t);
 
   return true;
+}
+
+void ui_handle_mouse_input(MEVENT *event) {
+  (void)event;
+
+  wrefresh(stdscr);
 }
 
 void ui_redraw_windows() {
